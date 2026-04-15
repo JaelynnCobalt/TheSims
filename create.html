@@ -5,20 +5,27 @@
     <title>CAS | Create A Sim</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/loaders/GLTFLoader.js"></script>
+    
     <style>
         body { margin: 0; background: radial-gradient(circle, #4a90e2, #1a2a6c); font-family: 'Segoe UI', sans-serif; overflow: hidden; color: white; }
         
         /* Left Panel - Identity & Traits */
-        #ui-layer { position: absolute; top: 20px; left: 20px; width: 300px; pointer-events: none; }
+        #ui-layer { position: absolute; top: 20px; left: 20px; width: 300px; z-index: 10; }
         .panel { 
             background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); 
             padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.3);
-            pointer-events: auto; margin-bottom: 10px;
+            margin-bottom: 10px;
         }
 
-        /* Top Left Plumbob/Name Area */
         .identity-header { display: flex; align-items: center; gap: 10px; }
-        input[type="text"] { background: white; border: none; padding: 8px; border-radius: 5px; width: 100%; }
+        input[type="text"] { background: white; border: none; padding: 8px; border-radius: 5px; width: 100%; color: black; }
+
+        .gender-btn { 
+            background: #0f3460; color: white; border: none; padding: 8px 15px; 
+            margin-top: 10px; cursor: pointer; border-radius: 5px; transition: 0.3s;
+        }
+        .gender-btn:hover { background: #e94560; }
 
         /* Bottom Menu Bar */
         .bottom-nav { 
@@ -29,10 +36,10 @@
         .nav-item:hover { opacity: 1; transform: scale(1.1); }
         
         /* The 3D Canvas */
-        #viewport { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        #viewport { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
 
         .save-btn { 
-            position: absolute; bottom: 100px; right: 40px; 
+            position: absolute; bottom: 100px; right: 40px; z-index: 10;
             background: #4ecc70; border: none; padding: 15px 40px; 
             color: white; font-weight: bold; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
@@ -45,6 +52,10 @@
         <div class="identity-header">
             <div style="width:40px; height:40px; background:#7fff00; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);"></div>
             <input type="text" id="simName" placeholder="Enter Name...">
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="gender-btn" onclick="loadModel('Superhero_Male_FullBody.gltf')">Male</button>
+            <button class="gender-btn" onclick="loadModel('Superhero_Female_FullBody.gltf')">Female</button>
         </div>
     </div>
 
@@ -79,35 +90,54 @@
     const SUPABASE_KEY = 'sb_publishable_GC2hg2u7yvF5N2oRUr2VnA_VxxN3Iz1';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 2. Basic 3D Scene Setup
+    // 2. 3D Scene Setup
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('viewport'), antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // Add Light
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(1, 1, 2).normalize();
+    // Better lighting for models
+    const light = new THREE.DirectionalLight(0xffffff, 1.2);
+    light.position.set(2, 2, 5);
     scene.add(light);
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
 
-    // Create a temporary "Sim" (A cylinder until you have a 3D model)
-    const geometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 32);
-    const material = new THREE.MeshPhongMaterial({ color: 0xf3c8ad });
-    const simModel = new THREE.Mesh(geometry, material);
-    scene.add(simModel);
-    camera.position.z = 5;
+    camera.position.set(0, 1.2, 3);
+
+    let currentSimModel;
+    const loader = new THREE.GLTFLoader();
+
+    // Function to load the Superhero models
+    function loadModel(modelName) {
+        if (currentSimModel) scene.remove(currentSimModel);
+        
+        loader.load('models/' + modelName, function(gltf) {
+            currentSimModel = gltf.scene;
+            currentSimModel.position.y = -1; // Adjust height so they stand on the "floor"
+            scene.add(currentSimModel);
+        }, undefined, function(error) {
+            console.error("Error loading " + modelName, error);
+        });
+    }
+
+    // Load Male by default
+    loadModel('Superhero_Male_FullBody.gltf');
 
     function animate() {
         requestAnimationFrame(animate);
-        simModel.rotation.y += 0.005; // Rotate the sim slowly
+        if(currentSimModel) currentSimModel.rotation.y += 0.005; 
         renderer.render(scene, camera);
     }
     animate();
 
     // 3. Functions
     function setSkin(color) {
-        simModel.material.color.set(color);
+        if(!currentSimModel) return;
+        currentSimModel.traverse((node) => {
+            if (node.isMesh) {
+                node.material.color.set(color);
+            }
+        });
     }
 
     async function saveSim() {
@@ -122,8 +152,7 @@
             { 
                 owner_id: user.id, 
                 name: name, 
-                fitness: parseFloat(fitness),
-                skin_color: simModel.material.color.getHexString()
+                fitness: parseFloat(fitness)
             }
         ]);
 
@@ -134,6 +163,13 @@
             window.location.href = "map.html";
         }
     }
+
+    // Handle Window Resize
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
 </script>
 
 </body>
