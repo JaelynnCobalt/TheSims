@@ -1,1 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sims Clone | Create A Sim</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: white; display: flex; flex-direction: column; align-items: center; padding: 50px; }
+        .creator-container { background: #16213e; padding: 30px; border-radius: 15px; width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #4ecca3; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; border-radius: 5px; border: none; background: #0f3460; color: white; box-sizing: border-box; }
+        button { background: #e94560; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: bold; margin-top: 10px; }
+        button:hover { background: #ff5e78; }
+        .preview-box { width: 100px; height: 100px; background: #4ecca3; margin: 20px auto; border-radius: 50%; border: 4px solid white; }
+    </style>
+</head>
+<body>
 
+    <h1>Create Your Sim</h1>
+    
+    <div class="creator-container">
+        <div class="preview-box" id="avatar-preview"></div>
+        
+        <div class="form-group">
+            <label>Sim Name</label>
+            <input type="text" id="simName" placeholder="e.g. Bella Goth">
+        </div>
+
+        <div class="form-group">
+            <label>Personality Aspiration</label>
+            <select id="aspiration">
+                <option value="wealth">Wealth</option>
+                <option value="creativity">Creativity</option>
+                <option value="popularity">Popularity</option>
+                <option value="knowledge">Knowledge</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Shirt Color</label>
+            <input type="color" id="shirtColor" value="#e94560" onchange="updatePreview()">
+        </div>
+
+        <button onclick="saveSim()">Start Life</button>
+        <p id="status"></p>
+    </div>
+
+<script>
+    const SUPABASE_URL = 'https://sjomitglpwjyttsaxjat.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_GC2hg2u7yvF5N2oRUr2VnA_VxxN3Iz1';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    function updatePreview() {
+        document.getElementById('avatar-preview').style.backgroundColor = document.getElementById('shirtColor').value;
+    }
+
+    async function saveSim() {
+        const name = document.getElementById('simName').value;
+        const aspiration = document.getElementById('aspiration').value;
+        const color = document.getElementById('shirtColor').value;
+        const status = document.getElementById('status');
+
+        if (!name) {
+            status.innerText = "Your Sim needs a name!";
+            return;
+        }
+
+        // Get the logged in user's ID
+        const { data: { user } } = await _supabase.auth.getUser();
+
+        if (!user) {
+            status.innerText = "Error: You aren't logged in.";
+            return;
+        }
+
+        status.innerText = "Moving in...";
+
+        // Insert data into your 'sims' table
+        const { data, error } = await _supabase
+            .from('sims')
+            .insert([
+                { 
+                    owner_id: user.id, 
+                    name: name, 
+                    hunger: 100, 
+                    energy: 100, 
+                    simoleons: 20000,
+                    // We can store the color in a metadata column or just as a string for now
+                    x_pos: 0,
+                    y_pos: 0
+                }
+            ]);
+
+        if (error) {
+            status.innerText = "Error saving: " + error.message;
+        } else {
+            status.innerText = "Sim created! Loading world...";
+            window.location.href = "game.html";
+        }
+    }
+</script>
+</body>
+</html>
