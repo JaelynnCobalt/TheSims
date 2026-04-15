@@ -2,65 +2,69 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Create A Sim | The Sims 4 Style</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create A Sim | High Fidelity</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
+        :root {
+            --ts-blue-light: #5ba8f5;
+            --ts-blue-dark: #1b4e8d;
+            --ts-green: #7fff00;
+        }
+
         body { 
             margin: 0; 
-            padding: 0;
-            background: radial-gradient(circle, #5ba8f5 0%, #1b4e8d 100%); 
-            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: radial-gradient(circle, var(--ts-blue-light) 0%, var(--ts-blue-dark) 100%); 
+            font-family: "Segoe UI", Roboto, sans-serif;
             overflow: hidden;
             color: white;
         }
 
-        /* Top Left Identity Area */
-        #identity-container {
+        /* Top Left: Name & Plumbob */
+        #identity-section {
             position: absolute;
             top: 40px;
             left: 40px;
+            z-index: 10;
             display: flex;
             align-items: center;
-            z-index: 10;
         }
 
-        .plumbob-icon {
-            width: 45px;
-            height: 45px;
-            background: #7fff00;
+        .plumbob {
+            width: 50px;
+            height: 50px;
+            background: var(--ts-green);
             clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-            margin-right: 15px;
-            filter: drop-shadow(0 0 10px rgba(127, 255, 0, 0.8));
+            margin-right: 20px;
+            filter: drop-shadow(0 0 15px rgba(127, 255, 0, 0.6));
         }
 
         #simName {
             background: none;
             border: none;
-            border-bottom: 2px solid rgba(255,255,255,0.8);
+            border-bottom: 2px solid rgba(255,255,255,0.7);
             color: white;
-            font-size: 24px;
-            font-weight: 300;
+            font-size: 28px;
             outline: none;
-            width: 250px;
-            letter-spacing: 1px;
+            width: 300px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
-        /* Right Side Navigation Menu */
-        #nav-menu {
+        /* Right Side: Circular Categories */
+        #category-nav {
             position: absolute;
             top: 40px;
             right: 40px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
             z-index: 10;
         }
 
-        .nav-button {
-            width: 65px;
-            height: 65px;
+        .nav-circle {
+            width: 70px;
+            height: 70px;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.3);
@@ -69,164 +73,174 @@
             justify-content: center;
             align-items: center;
             cursor: pointer;
+            font-size: 32px;
             transition: all 0.2s ease;
-            font-size: 28px;
         }
 
-        .nav-button:hover {
-            background: rgba(255, 255, 255, 0.3);
+        .nav-circle:hover {
+            background: rgba(255, 255, 255, 0.25);
             transform: scale(1.1);
         }
 
-        .gender-toggle {
-            margin-top: 20px;
+        /* Gender Toggle */
+        .gender-select {
+            margin-top: 15px;
             display: flex;
             gap: 10px;
         }
 
         .gender-btn {
-            background: rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.2);
             border: 1px solid white;
             color: white;
-            padding: 8px 15px;
+            padding: 8px 18px;
             border-radius: 20px;
             cursor: pointer;
+            font-size: 14px;
         }
 
-        /* Bottom Play Button */
-        #play-container {
+        /* Bottom Right: Iconic Play Button */
+        #play-action {
             position: absolute;
-            bottom: 40px;
-            right: 40px;
+            bottom: 50px;
+            right: 50px;
             z-index: 10;
         }
 
-        .play-button {
-            width: 100px;
-            height: 100px;
+        .play-btn {
+            width: 120px;
+            height: 120px;
             background: #4ecc70;
-            border: 5px solid white;
+            border: 6px solid white;
             border-radius: 50%;
             color: white;
             font-weight: 900;
-            font-size: 18px;
+            font-size: 20px;
             cursor: pointer;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            transition: 0.3s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .play-button:hover { transform: scale(1.1) rotate(5deg); }
+        .play-btn:hover { transform: scale(1.15); }
 
-        #viewport { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        canvas { position: absolute; top: 0; left: 0; outline: none; }
     </style>
 </head>
 <body>
 
-<div id="identity-container">
-    <div class="plumbob-icon"></div>
+<div id="identity-section">
+    <div class="plumbob"></div>
     <div>
         <input type="text" id="simName" placeholder="ENTER NAME...">
-        <div class="gender-toggle">
-            <button class="gender-btn" onclick="loadModel('Superhero_Male_FullBody.gltf')">MALE</button>
-            <button class="gender-btn" onclick="loadModel('Superhero_Female_FullBody.gltf')">FEMALE</button>
+        <div class="gender-select">
+            <button class="gender-btn" id="btnMale">♂ MALE</button>
+            <button class="gender-btn" id="btnFemale">♀ FEMALE</button>
         </div>
     </div>
 </div>
 
-<div id="nav-menu">
-    <div class="nav-button" title="Body">👤</div>
-    <div class="nav-button" title="Hair">💇</div>
-    <div class="nav-button" title="Clothing">👕</div>
-    <div class="nav-button" title="Aspiration">🌟</div>
-    <div class="nav-button" title="Traits">🧠</div>
+<div id="category-nav">
+    <div class="nav-circle" title="Body">👤</div>
+    <div class="nav-circle" title="Hair">💇</div>
+    <div class="nav-circle" title="Clothing">👕</div>
+    <div class="nav-circle" title="Traits">🧠</div>
 </div>
 
-<div id="play-container">
-    <button class="play-button" onclick="saveSim()">PLAY</button>
+<div id="play-action">
+    <button class="play-btn" onclick="saveSim()">PLAY</button>
 </div>
 
-<canvas id="viewport"></canvas>
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+    }
+}
+</script>
 
-<script>
-    const SUPABASE_URL = 'https://sjomitglpwjyttsaxjat.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_GC2hg2u7yvF5N2oRUr2VnA_VxxN3Iz1';
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-    // 1. Scene Setup
+    // 1. Setup Scene
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('viewport'), antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
+    document.body.appendChild(renderer.domElement);
 
-    // 2. High-Quality Lighting (Sims Studio Style)
-    const ambient = new THREE.AmbientLight(0xffffff, 1.2);
+    // 2. High-Quality "Studio" Lighting
+    const ambient = new THREE.AmbientLight(0xffffff, 1.0);
     scene.add(ambient);
 
-    const frontLight = new THREE.DirectionalLight(0xffffff, 1);
-    frontLight.position.set(0, 2, 4);
-    scene.add(frontLight);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    keyLight.position.set(2, 4, 5);
+    scene.add(keyLight);
 
-    const backLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    backLight.position.set(0, 2, -4);
-    scene.add(backLight);
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    fillLight.position.set(-2, 2, 2);
+    scene.add(fillLight);
 
-    camera.position.set(0, 1.5, 5);
+    camera.position.set(0, 1.4, 4.5);
 
     let currentModel;
-    const loader = new THREE.GLTFLoader();
+    const loader = new GLTFLoader();
 
-    // 3. Robust Model Loader with Auto-Scaling
-    function loadModel(modelName) {
+    window.loadModel = function(modelName) {
         if (currentModel) scene.remove(currentModel);
 
-        loader.load('./models/' + modelName, function(gltf) {
+        loader.load('./models/' + modelName, (gltf) => {
             currentModel = gltf.scene;
-
-            // FIX: This centers and scales the model regardless of its original size
+            
+            // Auto-center and Scale logic
             const box = new THREE.Box3().setFromObject(currentModel);
-            const size = box.getSize(new THREE.Vector3());
             const center = box.getCenter(new THREE.Vector3());
-            
-            // Re-center model
-            currentModel.position.x += (currentModel.position.x - center.x);
-            currentModel.position.y += (currentModel.position.y - center.y);
-            currentModel.position.z += (currentModel.position.z - center.z);
-            
-            // Adjust standing position
-            currentModel.position.y = -1; 
+            currentModel.position.sub(center); 
+            currentModel.position.y = -0.9; // Position feet near bottom
 
             scene.add(currentModel);
-            console.log("Model successfully visible!");
-        }, undefined, function(error) {
-            console.error("Load failed. Check if .bin files are in the models/ folder!", error);
-        });
+        }, undefined, (err) => console.error("Error loading model:", err));
     }
 
-    // Default Load
+    // Assign buttons
+    document.getElementById('btnMale').onclick = () => loadModel('Superhero_Male_FullBody.gltf');
+    document.getElementById('btnFemale').onclick = () => loadModel('Superhero_Female_FullBody.gltf');
+
+    // Default load
     loadModel('Superhero_Male_FullBody.gltf');
 
     function animate() {
         requestAnimationFrame(animate);
-        if(currentModel) currentModel.rotation.y += 0.005;
+        if(currentModel) currentModel.rotation.y += 0.004;
         renderer.render(scene, camera);
     }
     animate();
 
+    window.onresize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+</script>
+
+<script>
+    // Supabase logic (Non-module)
+    const SUPABASE_URL = 'https://sjomitglpwjyttsaxjat.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_GC2hg2u7yvF5N2oRUr2VnA_VxxN3Iz1';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     async function saveSim() {
         const name = document.getElementById('simName').value;
+        if(!name) return alert("Give your Sim a name!");
+        
         const { data: { user } } = await _supabase.auth.getUser();
-        if(!user) return alert("Login to save!");
+        if(!user) return alert("Please Login!");
 
         await _supabase.from('sims').insert([{ owner_id: user.id, name: name }]);
         window.location.href = "map.html";
     }
-
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
 </script>
 </body>
 </html>
