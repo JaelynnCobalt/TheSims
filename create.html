@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Create A Sim | The Sims 4 Style</title>
+    <title>Create A Sim | High Fidelity</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -13,30 +13,28 @@
 
         body { 
             margin: 0; 
-            /* High-Fidelity radial gradient like the screenshot */
             background: radial-gradient(circle at center, var(--ts-blue-light) 0%, var(--ts-blue-dark) 100%); 
             font-family: "Segoe UI", sans-serif;
-            overflow: hidden; /* Standard for CAS to keep it looking like a game */
+            overflow: hidden; 
             color: white;
             height: 100vh;
         }
 
-        /* THE FIX: This layer sits on top but lets clicks "fall through" to the 3D world if no button is hit */
-        #ui-master-layer {
+        /* UI LAYER: Keeps buttons clickable while 3D is in background */
+        #ui-layer {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            z-index: 999;
+            z-index: 100;
             pointer-events: none; 
         }
 
-        /* This class makes specific UI elements clickable again */
         .clickable { pointer-events: auto; }
 
-        /* Identity Panel (Top Left) */
+        /* Top Left: Identity & Plumbob */
         #identity-panel {
             position: absolute;
-            top: 40px; left: 40px;
+            top: 30px; left: 30px;
             display: flex;
             align-items: center;
         }
@@ -45,7 +43,7 @@
             width: 45px; height: 45px;
             background: #7fff00;
             clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-            margin-right: 20px;
+            margin-right: 15px;
             filter: drop-shadow(0 0 10px rgba(127, 255, 0, 0.8));
         }
 
@@ -54,52 +52,54 @@
             border: none;
             border-bottom: 2px solid white;
             color: white;
-            font-size: 24px;
-            padding: 5px 10px;
+            font-size: 28px;
+            padding: 5px;
             outline: none;
-            width: 300px;
+            width: 320px;
             text-transform: uppercase;
         }
 
-        /* Skin Tone Color Box (Modern UI) */
-        #skin-tone-container {
+        /* Skin Tone Adjuster (Custom Box) */
+        #skin-panel {
             position: absolute;
-            top: 140px; left: 40px;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            padding: 15px;
-            border-radius: 15px;
+            top: 140px; left: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            padding: 20px;
+            border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.2);
+            text-align: center;
         }
 
-        .skin-box {
-            width: 40px; height: 40px;
-            border-radius: 8px;
+        #skinColorPicker {
+            width: 100px; height: 100px;
+            border: none;
+            background: none;
             cursor: pointer;
-            border: 2px solid transparent;
-            transition: 0.2s;
         }
-        .skin-box:hover { transform: scale(1.1); border-color: white; }
 
-        /* Category Nav (Right Side) */
+        /* Category Nav (Right Side Icons) */
         #category-nav {
             position: absolute;
-            top: 40px; right: 40px;
+            top: 30px; right: 30px;
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
 
         .nav-circle {
-            width: 65px; height: 65px;
+            width: 60px; height: 60px;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.3);
+            border: 1px solid rgba(255,255,255,0.4);
             border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
-            cursor: pointer; font-size: 28px;
+            cursor: pointer; transition: 0.2s;
         }
+        .nav-circle:hover { transform: scale(1.1); background: rgba(255,255,255,0.2); }
+        .nav-circle img { width: 35px; height: 35px; }
 
+        /* Play Button */
         .play-btn {
             position: absolute;
             bottom: 40px; right: 40px;
@@ -107,44 +107,37 @@
             background: var(--ts-green);
             border: 6px solid white;
             border-radius: 50%;
-            color: white; font-weight: 900; font-size: 20px;
-            cursor: pointer; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            color: white; font-weight: 900; font-size: 22px;
+            cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         }
 
-        canvas { position: absolute; top: 0; left: 0; z-index: 1; }
+        canvas { position: absolute; top: 0; left: 0; z-index: 1; outline: none; }
     </style>
 </head>
 <body>
 
-<div id="ui-master-layer">
+<div id="ui-layer">
     <div id="identity-panel" class="clickable">
         <div class="plumbob"></div>
         <div>
             <input type="text" id="simName" placeholder="ENTER NAME...">
-            <div style="margin-top: 15px; display: flex; gap: 10px;">
+            <div style="margin-top: 10px;">
                 <button class="clickable" onclick="loadModel('Superhero_Male_FullBody.gltf')">♂ MALE</button>
                 <button class="clickable" onclick="loadModel('Superhero_Female_FullBody.gltf')">♀ FEMALE</button>
             </div>
         </div>
     </div>
 
-    <div id="skin-tone-container" class="clickable">
-        <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 10px;">SKIN TONE</label>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-            <div class="skin-box" style="background: #f3c8ad;" onclick="changeSkin('#f3c8ad')"></div>
-            <div class="skin-box" style="background: #e6b291;" onclick="changeSkin('#e6b291')"></div>
-            <div class="skin-box" style="background: #ac7e5c;" onclick="changeSkin('#ac7e5c')"></div>
-            <div class="skin-box" style="background: #8d5531;" onclick="changeSkin('#8d5531')"></div>
-            <div class="skin-box" style="background: #4b2c20;" onclick="changeSkin('#4b2c20')"></div>
-            <div class="skin-box" style="background: #2b1608;" onclick="changeSkin('#2b1608')"></div>
-        </div>
+    <div id="skin-panel" class="clickable">
+        <label style="font-size: 12px; font-weight: bold; letter-spacing: 1px;">SKIN TONE</label><br><br>
+        <input type="color" id="skinColorPicker" value="#e6b291">
     </div>
 
     <div id="category-nav">
-        <div class="nav-circle clickable" title="Body">👤</div>
-        <div class="nav-circle clickable" title="Hair">💇</div>
-        <div class="nav-circle clickable" title="Clothing">👕</div>
-        <div class="nav-circle clickable" title="Traits">🧠</div>
+        <div class="nav-circle clickable"><img src="https://img.icons8.com/ios-filled/50/ffffff/user-male-circle.png"></div>
+        <div class="nav-circle clickable"><img src="https://img.icons8.com/ios-filled/50/ffffff/comb.png"></div>
+        <div class="nav-circle clickable"><img src="https://img.icons8.com/ios-filled/50/ffffff/t-shirt.png"></div>
+        <div class="nav-circle clickable"><img src="https://img.icons8.com/ios-filled/50/ffffff/brain.png"></div>
     </div>
 
     <button class="play-btn clickable" onclick="saveSim()">PLAY</button>
@@ -162,6 +155,7 @@
 <script type="module">
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -170,33 +164,40 @@
     renderer.setPixelRatio(window.devicePixelRatio);
     document.body.appendChild(renderer.domElement);
 
-    // Studio Lighting
-    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(5, 5, 5);
-    scene.add(light);
+    // Studio Lighting setup
+    scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+    const dLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dLight.position.set(5, 10, 7.5);
+    scene.add(dLight);
 
-    camera.position.set(0, 1.2, 4.5);
+    // CAMERA & CONTROLS (The fix for scrolling/moving the character)
+    camera.position.set(0, 1.0, 5); // Raised camera slightly
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.target.set(0, 0.8, 0); // Focuses the "center" of rotation on the torso
+    controls.mouseButtons = {
+        LEFT: THREE.MOUSE.ROTATE,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.PAN // Right-click to "scroll" the model up/down
+    };
 
     let currentModel;
     const loader = new GLTFLoader();
 
     window.loadModel = function(modelName) {
         if (currentModel) scene.remove(currentModel);
-        // Assuming your models are in a folder named 'models'
         loader.load('./models/' + modelName, (gltf) => {
             currentModel = gltf.scene;
-            currentModel.position.y = -1;
+            currentModel.position.y = -0.5; // Positions him higher up
             scene.add(currentModel);
         });
     }
 
-    window.changeSkin = function(hexColor) {
+    // Fully Customizable Skin Tone Fix
+    document.getElementById('skinColorPicker').oninput = (e) => {
         if (!currentModel) return;
         currentModel.traverse((node) => {
-            if (node.isMesh) {
-                node.material.color.set(hexColor);
-            }
+            if (node.isMesh) node.material.color.set(e.target.value);
         });
     }
 
@@ -204,7 +205,7 @@
 
     function animate() {
         requestAnimationFrame(animate);
-        if(currentModel) currentModel.rotation.y += 0.005;
+        controls.update();
         renderer.render(scene, camera);
     }
     animate();
@@ -214,24 +215,6 @@
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     };
-</script>
-
-<script>
-    // Database Logic
-    const SUPABASE_URL = 'https://sjomitglpwjyttsaxjat.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_GC2hg2u7yvF5N2oRUr2VnA_VxxN3Iz1';
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    async function saveSim() {
-        const name = document.getElementById('simName').value;
-        if(!name) return alert("Please name your Sim!");
-        
-        const { data: { user } } = await _supabase.auth.getUser();
-        if(!user) return alert("You must be logged in!");
-
-        await _supabase.from('sims').insert([{ owner_id: user.id, name: name }]);
-        window.location.href = "map.html";
-    }
 </script>
 </body>
 </html>
