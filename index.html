@@ -6,45 +6,99 @@
     <title>Sims Clone | Login</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; background: #1a1a2e; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: #16213e; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center; }
-        input { display: block; width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
-        button { background: #0f3460; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; width: 100%; }
-        button:hover { background: #e94560; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #1a1a2e; 
+            color: white; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+        .login-card { 
+            background: #16213e; 
+            padding: 2.5rem; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            text-align: center; 
+            width: 350px;
+        }
+        h1 { color: #4ecca3; margin-bottom: 0.5rem; }
+        input { 
+            display: block; 
+            width: 100%; 
+            padding: 12px; 
+            margin: 15px 0; 
+            border-radius: 8px; 
+            border: 1px solid #0f3460; 
+            background: #0f3460;
+            color: white;
+            box-sizing: border-box;
+        }
+        button { 
+            background: #e94560; 
+            color: white; 
+            border: none; 
+            padding: 12px; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            width: 100%; 
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        button:hover { background: #ff5e78; transform: translateY(-2px); }
+        #status { margin-top: 15px; font-size: 0.9rem; color: #999; }
     </style>
 </head>
 <body>
 
 <div class="login-card">
     <h1>Sims Clone</h1>
-    <p>Sign in to start living.</p>
-    <input type="email" id="email" placeholder="Email">
+    <p>Sign in to start your life.</p>
+    <input type="email" id="email" placeholder="Email Address">
     <input type="password" id="password" placeholder="Password">
-    <button onclick="signIn()">Sign In / Sign Up</button>
+    <button onclick="handleAuth()">Enter World</button>
     <div id="status"></div>
 </div>
 
 <script>
-    // REPLACE THESE with your actual Supabase details
-    const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
-    const SUPABASE_KEY = 'YOUR_ANON_KEY';
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Your specific Supabase Configuration
+    const SUPABASE_URL = 'https://sjomitglpwjyttsaxjat.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_GC2hg2u7yvF5N2oRUr2VnA_VxxN3Iz1';
+    
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    async function signIn() {
+    async function handleAuth() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
+        const status = document.getElementById('status');
         
-        // This attempts to sign up; if user exists, you can switch to signInWithPassword
-        const { data, error } = await supabase.auth.signUp({
+        status.innerText = "Processing...";
+
+        // Logic: Try to sign up first. If user exists, try to sign in.
+        const { data, error: signUpError } = await _supabase.auth.signUp({
             email: email,
             password: password,
         });
 
-        if (error) {
-            document.getElementById('status').innerText = error.message;
+        if (signUpError) {
+            // If already registered, attempt login
+            const { error: signInError } = await _supabase.auth.signInWithPassword({
+                email: email,
+                password: password,
+            });
+
+            if (signInError) {
+                status.innerText = "Error: " + signInError.message;
+            } else {
+                status.innerText = "Logging in...";
+                window.location.href = "create.html";
+            }
         } else {
-            document.getElementById('status').innerText = "Success! Redirecting...";
-            window.location.href = "create.html"; // Move to character creation
+            status.innerText = "Account created! Check email for verification if enabled.";
+            // If email confirm is off in Supabase, we can redirect immediately:
+            window.location.href = "create.html";
         }
     }
 </script>
