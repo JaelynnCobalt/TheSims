@@ -1,266 +1,118 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Create A Sim | High Fidelity</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root {
-            --ts-blue-light: #5ba8f5;
-            --ts-blue-dark: #1b4e8d;
-            --ts-green: #4ecc70;
+<style>
+    #personality-overlay {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.4); /* Dimmed background */
+        backdrop-filter: blur(8px);    /* High-fidelity blur effect */
+        z-index: 2000; 
+        display: none; /* Controlled by JS */
+        justify-content: center;
+        align-items: center;
+        pointer-events: auto;
+    }
 
-        }
+    .personality-card {
+        background: rgba(255, 255, 255, 0.95);
+        color: #333;
+        width: 450px;
+        border-radius: 25px;
+        padding: 30px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        text-align: center;
+    }
 
-        body { 
-            margin: 0; 
-            background: radial-gradient(circle at center, var(--ts-blue-light) 0%, var(--ts-blue-dark) 100%); 
-            font-family: "Segoe UI", sans-serif;
-            overflow: hidden; 
-            color: white;
-            height: 100vh;
-        }
+    .trait-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin: 20px 0;
+    }
 
-        /* UI LAYER: Keeps buttons clickable while 3D is in background */
-        #ui-layer {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 100;
-            pointer-events: none; 
-        }
+    .trait-item {
+        background: #eee;
+        padding: 12px 5px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: bold;
+        border: 3px solid transparent;
+        transition: all 0.2s ease;
+    }
 
-        .clickable { pointer-events: auto; }
+    .trait-item:hover {
+        background: #e0e0e0;
+    }
 
-        /* Top Left: Identity & Plumbob */
-        #identity-panel {
-            position: absolute;
-            top: 30px; left: 30px;
-            display: flex;
-            align-items: center;
-        }
+    .trait-item.selected {
+        border-color: #5ba8f5;
+        background: #e1f0ff;
+        color: #1b4e8d;
+    }
 
-        .plumbob {
-            width: 45px; height: 45px;
-            background: #7fff00;
-            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-            margin-right: 15px;
-            filter: drop-shadow(0 0 10px rgba(127, 255, 0, 0.8));
-        }
+    .done-btn {
+        background: #4ecc70;
+        color: white;
+        border: none;
+        padding: 12px 40px;
+        border-radius: 50px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 16px;
+    }
+</style>
 
-        #simName {
-            background: rgba(255,255,255,0.1);
-            border: none;
-            border-bottom: 2px solid white;
-            color: white;
-            font-size: 28px;
-            padding: 5px;
-            outline: none;
-            width: 320px;
-            text-transform: uppercase;
-        }
+<div id="personality-overlay">
+    <div class="personality-card">
+        <h2 style="margin:0 0 10px 0; color:#1b4e8d;">ASPIRATION</h2>
+        <select id="aspiration" class="clickable" style="width:100%; padding:10px; border-radius:10px; border:1px solid #ccc;">
+            <option value="Wealth">💰 Wealth</option>
+            <option value="Knowledge">🧠 Knowledge</option>
+            <option value="Creativity">🎨 Creativity</option>
+            <option value="Love">❤️ Love</option>
+        </select>
 
-        /* Skin Tone Adjuster (Custom Box) */
-        #skin-panel {
-            position: absolute;
-            top: 140px; left: 30px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(15px);
-            padding: 20px;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.2);
-            text-align: center;
-        }
-
-        #skinColorPicker {
-            width: 100px; height: 100px;
-            border: none;
-            background: none;
-            cursor: pointer;
-        }
-
-        /* Category Nav (Right Side Icons) */
-        #category-nav {
-            position: absolute;
-            top: 30px; right: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .nav-circle {
-            width: 60px; height: 60px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.4);
-            border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            cursor: pointer; transition: 0.2s;
-        }
-        .nav-circle:hover { transform: scale(1.1); background: rgba(255,255,255,0.2); }
-        .nav-circle img { width: 35px; height: 35px; }
-
-        /* Play Button */
-        .play-btn {
-            position: absolute;
-            bottom: 40px; right: 40px;
-            width: 120px; height: 120px;
-            background: var(--ts-green);
-            border: 6px solid white;
-            border-radius: 50%;
-            color: white; font-weight: 900; font-size: 22px;
-            cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-        }
-
-        canvas { position: absolute; top: 0; left: 0; z-index: 1; outline: none; }
-    </style>
-</head>
-<body>
-
-<div id="ui-layer">
-    <div id="identity-panel" class="clickable">
-        <div class="plumbob"></div>
-        <div>
-            <input type="text" id="simName" placeholder="ENTER NAME...">
-            <div style="margin-top: 10px;">
-                <button class="clickable" onclick="loadModel('Superhero_Male_FullBody.gltf')">♂ MALE</button>
-                <button class="clickable" onclick="loadModel('Superhero_Female_FullBody.gltf')">♀ FEMALE</button>
-            </div>
+        <h2 style="margin:20px 0 0 0; color:#1b4e8d;">TRAITS (MAX 3)</h2>
+        <div class="trait-grid">
+            <div class="trait-item clickable" onclick="toggleTrait(this, 'Ambitious')">Ambitious</div>
+            <div class="trait-item clickable" onclick="toggleTrait(this, 'Cheerful')">Cheerful</div>
+            <div class="trait-item clickable" onclick="toggleTrait(this, 'Genius')">Genius</div>
+            <div class="trait-item clickable" onclick="toggleTrait(this, 'Gloomy')">Gloomy</div>
+            <div class="trait-item clickable" onclick="toggleTrait(this, 'Loner')">Loner</div>
+            <div class="trait-item clickable" onclick="toggleTrait(this, 'Mean')">Mean</div>
         </div>
+
+        <button class="done-btn clickable" onclick="closePersonality()">DONE</button>
     </div>
-
-    <div id="skin-panel" class="clickable">
-        <label style="font-size: 12px; font-weight: bold; letter-spacing: 1px;">SKIN TONE</label><br><br>
-        <input type="color" id="skinColorPicker" value="#e6b291">
-    </div>
-
-    <div id="category-nav">
-        <div class="nav-circle clickable"><img src="https://img.icons8.com/ios-filled/50/ffffff/user-male-circle.png"></div>
-        <div class="nav-circle clickable"><img src="https://img.icons8.com/ios-filled/50/ffffff/comb.png"></div>
-        <div class="nav-circle clickable"><img src="https://img.icons8.com/ios-filled/50/ffffff/t-shirt.png"></div>
-        <div class="nav-circle clickable"><img src="https://img.icons8.com/ios-filled/50/ffffff/brain.png"></div>
-    </div>
-
-    <button class="play-btn clickable" onclick="saveSim()">PLAY</button>
-
-    /* Personality Modal */
-#personality-overlay {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 2000; /* Must be highest to be on top */
-    display: none; 
-    justify-content: center;
-    align-items: center;
-    pointer-events: auto;
-}
-
-.personality-card {
-    background: white;
-    color: #333;
-    width: 500px;
-    border-radius: 20px;
-    padding: 30px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-    pointer-events: auto;
-}
-
-.trait-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-top: 15px;
-}
-
-.trait-item {
-    background: #f0f0f0;
-    padding: 10px;
-    border-radius: 8px;
-    text-align: center;
-    cursor: pointer;
-    font-size: 14px;
-    border: 2px solid transparent;
-}
-
-.trait-item.selected {
-    border-color: #5ba8f5;
-    background: #e1f0ff;
-}
 </div>
 
-<script type="importmap">
-{
-    "imports": {
-        "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
-    }
-}
-</script>
+<script>
+    let selectedTraits = [];
 
-<script type="module">
-    import * as THREE from 'three';
-    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    document.body.appendChild(renderer.domElement);
-
-    // Studio Lighting setup
-    scene.add(new THREE.AmbientLight(0xffffff, 1.0));
-    const dLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dLight.position.set(5, 10, 7.5);
-    scene.add(dLight);
-
-    // CAMERA & CONTROLS (The fix for scrolling/moving the character)
-    camera.position.set(0, 1.0, 5); // Raised camera slightly
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.target.set(0, 0.8, 0); // Focuses the "center" of rotation on the torso
-    controls.mouseButtons = {
-        LEFT: THREE.MOUSE.ROTATE,
-        MIDDLE: THREE.MOUSE.DOLLY,
-        RIGHT: THREE.MOUSE.PAN // Right-click to "scroll" the model up/down
+    // Function to show the modal when clicking the brain icon
+    window.openPersonality = function() {
+        document.getElementById('personality-overlay').style.display = 'flex';
     };
 
-    let currentModel;
-    const loader = new GLTFLoader();
+    // Function to hide the modal
+    window.closePersonality = function() {
+        document.getElementById('personality-overlay').style.display = 'none';
+    };
 
-    window.loadModel = function(modelName) {
-        if (currentModel) scene.remove(currentModel);
-        loader.load('./models/' + modelName, (gltf) => {
-            currentModel = gltf.scene;
-            currentModel.position.y = -0.5; // Positions him higher up
-            scene.add(currentModel);
-        });
-    }
-
-    // Fully Customizable Skin Tone Fix
-    document.getElementById('skinColorPicker').oninput = (e) => {
-        if (!currentModel) return;
-        currentModel.traverse((node) => {
-            if (node.isMesh) node.material.color.set(e.target.value);
-        });
-    }
-
-    loadModel('Superhero_Male_FullBody.gltf');
-
-    function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
-    }
-    animate();
-
-    window.onresize = () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+    // Logic for selecting/deselecting traits
+    window.toggleTrait = function(element, traitName) {
+        if (selectedTraits.includes(traitName)) {
+            // Deselect
+            selectedTraits = selectedTraits.filter(t => t !== traitName);
+            element.classList.remove('selected');
+        } else {
+            // Select if under limit
+            if (selectedTraits.length < 3) {
+                selectedTraits.push(traitName);
+                element.classList.add('selected');
+            } else {
+                alert("Sims can only have 3 personality traits!");
+            }
+        }
     };
 </script>
-</body>
-</html>
