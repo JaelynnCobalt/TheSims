@@ -1,118 +1,171 @@
 <style>
+    /* High-Fidelity Personality Modal */
     #personality-overlay {
         position: absolute;
         top: 0; left: 0;
         width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.4); /* Dimmed background */
-        backdrop-filter: blur(8px);    /* High-fidelity blur effect */
-        z-index: 2000; 
-        display: none; /* Controlled by JS */
+        /* Darken background like Sims 4 */
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 2000; /* Keeps it above the 3D model */
+        display: none; 
         justify-content: center;
         align-items: center;
-        pointer-events: auto;
+        pointer-events: auto; /* IMPORTANT: Allows clicking */
     }
 
     .personality-card {
-        background: rgba(255, 255, 255, 0.95);
-        color: #333;
-        width: 450px;
-        border-radius: 25px;
-        padding: 30px;
+        background: rgba(255, 255, 255, 0.85); /* Glass effect */
+        backdrop-filter: blur(15px);
+        color: #1b4e8d;
+        width: 550px;
+        border-radius: 30px;
+        padding: 40px;
         box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        text-align: center;
+        border: 1px solid rgba(255,255,255,0.4);
+    }
+
+    .personality-card h2 {
+        font-size: 18px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 15px;
     }
 
     .trait-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 12px;
-        margin: 20px 0;
+        margin-bottom: 25px;
     }
 
     .trait-item {
-        background: #eee;
-        padding: 12px 5px;
-        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.5);
+        border: 2px solid transparent;
+        padding: 15px 10px;
+        border-radius: 15px;
+        text-align: center;
         cursor: pointer;
-        font-size: 13px;
-        font-weight: bold;
-        border: 3px solid transparent;
-        transition: all 0.2s ease;
+        transition: 0.2s all;
+        font-weight: 600;
+        color: #1b4e8d;
     }
 
     .trait-item:hover {
-        background: #e0e0e0;
+        background: white;
     }
 
     .trait-item.selected {
         border-color: #5ba8f5;
-        background: #e1f0ff;
-        color: #1b4e8d;
+        background: #5ba8f5;
+        color: white;
+    }
+
+    .aspiration-select {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        border-radius: 12px;
+        border: 1px solid #ccc;
+        margin-bottom: 25px;
+        outline: none;
+        cursor: pointer;
     }
 
     .done-btn {
         background: #4ecc70;
         color: white;
         border: none;
-        padding: 12px 40px;
-        border-radius: 50px;
-        font-weight: bold;
+        padding: 15px 40px;
+        border-radius: 30px;
         cursor: pointer;
-        font-size: 16px;
+        font-weight: bold;
+        float: right;
+        transition: 0.2s;
     }
+    .done-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
 </style>
 
 <div id="personality-overlay">
     <div class="personality-card">
-        <h2 style="margin:0 0 10px 0; color:#1b4e8d;">ASPIRATION</h2>
-        <select id="aspiration" class="clickable" style="width:100%; padding:10px; border-radius:10px; border:1px solid #ccc;">
-            <option value="Wealth">💰 Wealth</option>
-            <option value="Knowledge">🧠 Knowledge</option>
-            <option value="Creativity">🎨 Creativity</option>
-            <option value="Love">❤️ Love</option>
+        <h2>Aspiration</h2>
+        <select id="aspiration" class="aspiration-select clickable">
+            <option value="Wealth">Wealth (Fabulously Wealthy)</option>
+            <option value="Knowledge">Knowledge (Renaissance Sim)</option>
+            <option value="Creativity">Creativity (Musical Genius)</option>
+            <option value="Love">Love (Soulmate)</option>
+            <option value="Athletic">Athletic (Bodybuilder)</option>
         </select>
 
-        <h2 style="margin:20px 0 0 0; color:#1b4e8d;">TRAITS (MAX 3)</h2>
+        <h2>Traits (Select 3)</h2>
         <div class="trait-grid">
             <div class="trait-item clickable" onclick="toggleTrait(this, 'Ambitious')">Ambitious</div>
             <div class="trait-item clickable" onclick="toggleTrait(this, 'Cheerful')">Cheerful</div>
+            <div class="trait-item clickable" onclick="toggleTrait(this, 'Creative')">Creative</div>
             <div class="trait-item clickable" onclick="toggleTrait(this, 'Genius')">Genius</div>
             <div class="trait-item clickable" onclick="toggleTrait(this, 'Gloomy')">Gloomy</div>
             <div class="trait-item clickable" onclick="toggleTrait(this, 'Loner')">Loner</div>
             <div class="trait-item clickable" onclick="toggleTrait(this, 'Mean')">Mean</div>
+            <div class="trait-item clickable" onclick="toggleTrait(this, 'Romantic')">Romantic</div>
+            <div class="trait-item clickable" onclick="toggleTrait(this, 'Artistic')">Artistic</div>
         </div>
-
+        
         <button class="done-btn clickable" onclick="closePersonality()">DONE</button>
+        <div style="clear:both;"></div>
     </div>
 </div>
 
 <script>
-    let selectedTraits = [];
+    // We use window. to make sure these work from inside the 3D module layer
+    window.selectedTraits = [];
 
-    // Function to show the modal when clicking the brain icon
     window.openPersonality = function() {
         document.getElementById('personality-overlay').style.display = 'flex';
-    };
+    }
 
-    // Function to hide the modal
     window.closePersonality = function() {
         document.getElementById('personality-overlay').style.display = 'none';
-    };
+    }
 
-    // Logic for selecting/deselecting traits
     window.toggleTrait = function(element, traitName) {
-        if (selectedTraits.includes(traitName)) {
-            // Deselect
-            selectedTraits = selectedTraits.filter(t => t !== traitName);
+        if (window.selectedTraits.includes(traitName)) {
+            window.selectedTraits = window.selectedTraits.filter(t => t !== traitName);
             element.classList.remove('selected');
         } else {
-            // Select if under limit
-            if (selectedTraits.length < 3) {
-                selectedTraits.push(traitName);
+            if (window.selectedTraits.length < 3) {
+                window.selectedTraits.push(traitName);
                 element.classList.add('selected');
             } else {
-                alert("Sims can only have 3 personality traits!");
+                alert("The Sims can only have 3 personality traits!");
             }
         }
-    };
+    }
+
+    // This updated save function grabs the Aspiration and Traits specifically
+    async function saveSim() {
+        const nameInput = document.getElementById('simName');
+        const aspInput = document.getElementById('aspiration');
+        const skinInput = document.getElementById('skinColorPicker');
+        
+        if(!nameInput.value) return alert("Your Sim needs a name!");
+        if(window.selectedTraits.length === 0) return alert("Pick at least one trait for your Sim's brain!");
+        
+        const { data: { user } } = await _supabase.auth.getUser();
+        if(!user) return alert("Please Login!");
+
+        const { error } = await _supabase.from('sims').insert([{ 
+            owner_id: user.id, 
+            name: nameInput.value,
+            aspiration: aspInput.value,
+            traits: window.selectedTraits,
+            skin_color: skinInput.value
+        }]);
+
+        if (error) {
+            console.error(error);
+            alert("Database Error: " + error.message);
+        } else {
+            window.location.href = "map.html";
+        }
+    }
 </script>
+
