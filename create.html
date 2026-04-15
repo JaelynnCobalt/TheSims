@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Create A Sim | High Fidelity</title>
+    <title>Create A Sim | Fixed Scale & UI</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --ts-blue-light: #5ba8f5;
             --ts-blue-dark: #1b4e8d;
             --ts-green: #4ecc70;
-            --glass: rgba(255, 255, 255, 0.15);
+            --glass: rgba(255, 255, 255, 0.2);
         }
 
         body { 
@@ -21,125 +21,75 @@
             height: 100vh;
         }
 
-        /* THE FIX: This layer is invisible to the mouse, but its children are clickable */
-        #ui-wrapper {
+        /* UI LAYER FIX: Z-index 1000 and pointer-events: none */
+        #ui-layer {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            z-index: 100;
+            z-index: 1000;
             pointer-events: none; 
         }
 
-        .clickable { pointer-events: auto !important; }
+        /* Makes buttons clickable again */
+        .clickable { pointer-events: auto !important; cursor: pointer; }
 
-        /* Left Identity Panel */
-        #identity-panel {
-            position: absolute;
-            top: 30px; left: 30px;
-            display: flex;
-            align-items: center;
-        }
-
-        .plumbob {
-            width: 45px; height: 45px;
-            background: #7fff00;
-            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-            margin-right: 15px;
-            filter: drop-shadow(0 0 10px rgba(127, 255, 0, 0.8));
-        }
+        #identity-panel { position: absolute; top: 30px; left: 30px; display: flex; align-items: center; }
+        .plumbob { width: 40px; height: 40px; background: #7fff00; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); margin-right: 15px; }
 
         #simName {
-            background: rgba(255,255,255,0.1);
-            border: none;
-            border-bottom: 2px solid white;
-            color: white; font-size: 28px; padding: 5px; outline: none; width: 320px;
+            background: rgba(0,0,0,0.2); border: none; border-bottom: 2px solid white;
+            color: white; font-size: 24px; padding: 5px; outline: none; width: 250px;
         }
 
-        /* Glass Panels */
         .glass-panel {
-            position: absolute;
-            background: var(--glass);
-            backdrop-filter: blur(15px);
-            padding: 20px;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.2);
-            display: none;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            position: absolute; background: var(--glass); backdrop-filter: blur(15px);
+            padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.3);
+            display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
-        #skin-panel { top: 150px; left: 30px; width: 120px; text-align: center; }
-        #closet-panel { top: 30px; right: 110px; width: 220px; }
-        #traits-panel { top: 30px; right: 110px; width: 220px; }
+        #skin-panel { top: 120px; left: 30px; display: block; }
+        #closet-panel { top: 30px; right: 100px; width: 220px; }
 
-        .closet-item {
-            width: 100%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.5);
-            color: white; padding: 12px; margin-bottom: 8px; border-radius: 10px; cursor: pointer;
-            transition: 0.2s;
-        }
-        .closet-item:hover { background: rgba(255,255,255,0.3); }
-
-        /* Right Nav Icons */
-        #category-nav {
-            position: absolute;
-            top: 30px; right: 30px;
-            display: flex; flex-direction: column; gap: 15px;
+        .item-btn {
+            width: 100%; background: white; color: #333; border: none;
+            padding: 12px; margin-bottom: 10px; border-radius: 8px; font-weight: bold;
         }
 
-        .nav-circle {
-            width: 60px; height: 60px;
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.4);
-            border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            cursor: pointer; transition: 0.2s;
-        }
-        .nav-circle:hover { transform: scale(1.1); background: rgba(255,255,255,0.3); }
+        #category-nav { position: absolute; top: 30px; right: 30px; display: flex; flex-direction: column; gap: 10px; }
+        .nav-btn { width: 55px; height: 55px; background: var(--glass); border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 1px solid white; }
 
         .play-btn {
-            position: absolute;
-            bottom: 40px; right: 40px;
-            width: 120px; height: 120px;
-            background: var(--ts-green);
-            border: 6px solid white; border-radius: 50%;
-            color: white; font-weight: 900; font-size: 22px; cursor: pointer;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            position: absolute; bottom: 30px; right: 30px;
+            width: 100px; height: 100px; background: var(--ts-green);
+            border: 4px solid white; border-radius: 50%; color: white; font-weight: 900;
         }
 
+        /* 3D Canvas sits BEHIND the UI */
         canvas { position: absolute; top: 0; left: 0; z-index: 1; outline: none; }
     </style>
 </head>
 <body>
 
-<div id="ui-wrapper">
+<div id="ui-layer">
     <div id="identity-panel" class="clickable">
         <div class="plumbob"></div>
-        <input type="text" id="simName" placeholder="ENTER NAME...">
+        <input type="text" id="simName" placeholder="NAME...">
     </div>
 
-    <div id="skin-panel" class="glass-panel clickable" style="display: block;">
-        <label style="font-size: 11px; font-weight: bold;">SKIN TONE</label><br><br>
-        <input type="color" id="skinColorPicker" class="clickable" value="#e6b291" style="width:80px; height:80px; border:none; background:none; cursor:pointer;">
+    <div id="skin-panel" class="glass-panel clickable">
+        <p style="margin:0 0 10px 0; font-size: 12px;">SKIN TONE</p>
+        <input type="color" id="skinColorPicker" class="clickable" value="#e6b291" style="width:60px; height:60px; border:none; cursor:pointer;">
     </div>
 
     <div id="closet-panel" class="glass-panel clickable">
-        <h3 style="margin:0 0 15px 0">OUTFITS</h3>
-        <button class="closet-item clickable" onclick="addClothing('Vintage Asian Dress Belt.gltf')">Vintage Asian Dress</button>
-        <button class="closet-item clickable" style="background: #ff4d4d;" onclick="removeClothing()">Remove Outfit</button>
-    </div>
-
-    <div id="traits-panel" class="glass-panel clickable">
-        <h3 style="margin:0 0 15px 0">TRAITS</h3>
-        <button class="closet-item clickable" onclick="setTrait('Ambitious')">Ambitious</button>
-        <button class="closet-item clickable" onclick="setTrait('Genius')">Genius</button>
-        <button class="closet-item clickable" onclick="setTrait('Romantic')">Romantic</button>
-        <p id="active-trait" style="font-size: 12px; color: #7fff00;"></p>
+        <p style="margin:0 0 10px 0; font-weight:bold;">OUTFITS</p>
+        <button class="item-btn clickable" onclick="addClothing('Vintage Asian Dress Belt.gltf')">Asian Dress</button>
+        <button class="item-btn clickable" style="background:#ff4d4d; color:white;" onclick="removeClothing()">Remove</button>
     </div>
 
     <div id="category-nav">
-        <div class="nav-circle clickable" onclick="openPanel('skin-panel')"><img src="https://img.icons8.com/ios-filled/30/ffffff/user-male-circle.png"></div>
-        <div class="nav-circle clickable" onclick="openPanel('closet-panel')"><img src="https://img.icons8.com/ios-filled/30/ffffff/t-shirt.png"></div>
-        <div class="nav-circle clickable" onclick="openPanel('traits-panel')"><img src="https://img.icons8.com/ios-filled/30/ffffff/brain.png"></div>
+        <div class="nav-btn clickable" onclick="showPanel('skin-panel')">👤</div>
+        <div class="nav-btn clickable" onclick="showPanel('closet-panel')">👕</div>
     </div>
 
     <button class="play-btn clickable" onclick="saveSim()">PLAY</button>
@@ -160,61 +110,51 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
     document.body.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
-    const dLight = new THREE.DirectionalLight(0xffffff, 1);
-    dLight.position.set(5, 10, 7.5);
-    scene.add(dLight);
+    scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+    camera.position.set(0, 1, 4);
 
-    camera.position.set(0, 1.0, 5);
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
     controls.target.set(0, 0.8, 0);
 
     let currentModel, currentClothing;
     const loader = new GLTFLoader();
 
-    // UI Panel Logic
-    window.openPanel = (id) => {
+    window.showPanel = (id) => {
         document.querySelectorAll('.glass-panel').forEach(p => p.style.display = 'none');
         document.getElementById(id).style.display = 'block';
-    };
+    }
 
-    // Load Sim
-    window.loadModel = (name) => {
-        if (currentModel) scene.remove(currentModel);
-        loader.load('./models/' + name, (gltf) => {
-            currentModel = gltf.scene;
-            currentModel.position.y = -0.5;
-            scene.add(currentModel);
-        });
-    };
+    // Load character
+    loader.load('./models/Superhero_Male_FullBody.gltf', (gltf) => {
+        currentModel = gltf.scene;
+        currentModel.position.y = -0.5;
+        scene.add(currentModel);
+    });
 
-    // Load Dress
+    // CLOTHING FIX: Added massive scale reduction (0.01)
     window.addClothing = (file) => {
         if (currentClothing) scene.remove(currentClothing);
         loader.load('./models/' + file, (gltf) => {
             currentClothing = gltf.scene;
             currentClothing.position.copy(currentModel.position);
-            currentClothing.rotation.copy(currentModel.rotation);
-            // If the dress is too big, change these 1s to 0.1s
-            currentClothing.scale.set(1, 1, 1); 
+            
+            // This forces the dress to shrink to a normal size
+            currentClothing.scale.set(0.01, 0.01, 0.01); 
+            
             scene.add(currentClothing);
         });
-    };
+    }
 
-    window.removeClothing = () => { if(currentClothing) scene.remove(currentClothing); currentClothing = null; };
+    window.removeClothing = () => { if(currentClothing) scene.remove(currentClothing); };
 
     document.getElementById('skinColorPicker').oninput = (e) => {
         if (currentModel) currentModel.traverse(n => { if(n.isMesh) n.material.color.set(e.target.value); });
-    };
-
-    loadModel('Superhero_Male_FullBody.gltf');
+    }
 
     function animate() {
         requestAnimationFrame(animate);
@@ -222,31 +162,6 @@
         renderer.render(scene, camera);
     }
     animate();
-</script>
-
-<script>
-    // Database & Traits
-    let selectedTrait = "";
-    function setTrait(t) {
-        selectedTrait = t;
-        document.getElementById('active-trait').innerText = "Selected: " + t;
-    }
-
-    const _supabase = supabase.createClient('https://sjomitglpwjyttsaxjat.supabase.co', 'sb_publishable_GC2hg2u7yvF5N2oRUr2VnA_VxxN3Iz1');
-
-    async function saveSim() {
-        const name = document.getElementById('simName').value;
-        if(!name) return alert("Enter a name!");
-        
-        const { data: { user } } = await _supabase.auth.getUser();
-        await _supabase.from('sims').insert([{ 
-            owner_id: user.id, 
-            name: name,
-            traits: [selectedTrait],
-            skin_color: document.getElementById('skinColorPicker').value
-        }]);
-        window.location.href = "map.html";
-    }
 </script>
 </body>
 </html>
