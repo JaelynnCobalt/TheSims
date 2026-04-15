@@ -21,7 +21,6 @@
             height: 100vh;
         }
 
-        /* master-ui allows clicks to fall through to 3D, but buttons stay active */
         #master-ui {
             position: absolute;
             top: 0; left: 0;
@@ -52,61 +51,35 @@
             background: rgba(255,255,255,0.1);
             border: none;
             border-bottom: 2px solid white;
-            color: white;
-            font-size: 28px;
-            padding: 5px;
-            outline: none;
-            width: 320px;
-            text-transform: uppercase;
+            color: white; font-size: 28px; padding: 5px; outline: none; width: 320px;
         }
 
-        /* Skin Panel */
-        #skin-panel {
+        /* Panels (Skin & Closet) */
+        .glass-panel {
             position: absolute;
-            top: 150px; left: 30px;
             background: var(--glass);
             backdrop-filter: blur(15px);
             padding: 20px;
             border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.2);
-            text-align: center;
+            display: none;
         }
+
+        #skin-panel { top: 150px; left: 30px; width: 120px; text-align: center; display: block; }
+        #closet-panel { top: 30px; right: 110px; width: 200px; }
 
         #skinColorPicker { width: 80px; height: 80px; border: none; background: none; cursor: pointer; }
 
-        /* Personality Menu (The Brain) */
-        #personality-overlay {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            pointer-events: auto;
-            z-index: 1000;
+        .closet-item {
+            width: 100%; background: rgba(0,0,0,0.2); border: 1px solid white;
+            color: white; padding: 10px; margin-bottom: 8px; border-radius: 10px; cursor: pointer;
         }
 
-        .personality-card {
-            background: white;
-            color: #333;
-            width: 500px;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-        }
-
-        .trait-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
-        .trait-item { background: #eee; padding: 10px; border-radius: 8px; text-align: center; cursor: pointer; border: 2px solid transparent; }
-        .trait-item.selected { border-color: var(--ts-blue-light); background: #e1f0ff; }
-
-        /* Right Nav */
+        /* Right Nav Icons */
         #category-nav {
             position: absolute;
             top: 30px; right: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            display: flex; flex-direction: column; gap: 15px;
         }
 
         .nav-circle {
@@ -124,10 +97,8 @@
             bottom: 40px; right: 40px;
             width: 120px; height: 120px;
             background: var(--ts-green);
-            border: 6px solid white;
-            border-radius: 50%;
-            color: white; font-weight: 900; font-size: 22px;
-            cursor: pointer;
+            border: 6px solid white; border-radius: 50%;
+            color: white; font-weight: 900; font-size: 22px; cursor: pointer;
         }
 
         canvas { position: absolute; top: 0; left: 0; z-index: 1; outline: none; }
@@ -138,47 +109,23 @@
 <div id="master-ui">
     <div id="identity-panel" class="clickable">
         <div class="plumbob"></div>
-        <div>
-            <input type="text" id="simName" placeholder="ENTER NAME...">
-            <div style="margin-top: 10px;">
-                <button class="clickable" onclick="loadModel('Superhero_Male_FullBody.gltf')">♂ MALE</button>
-                <button class="clickable" onclick="loadModel('Superhero_Female_FullBody.gltf')">♀ FEMALE</button>
-            </div>
-        </div>
+        <input type="text" id="simName" placeholder="ENTER NAME...">
     </div>
 
-    <div id="skin-panel" class="clickable">
+    <div id="skin-panel" class="glass-panel clickable">
         <label style="font-size: 11px; font-weight: bold;">SKIN TONE</label><br><br>
         <input type="color" id="skinColorPicker" value="#e6b291">
     </div>
 
-    <div id="category-nav">
-        <div class="nav-circle clickable"><img src="https://img.icons8.com/ios-filled/35/ffffff/user-male-circle.png"></div>
-        <div class="nav-circle clickable"><img src="https://img.icons8.com/ios-filled/35/ffffff/comb.png"></div>
-        <div class="nav-circle clickable"><img src="https://img.icons8.com/ios-filled/35/ffffff/t-shirt.png"></div>
-        <div class="nav-circle clickable" onclick="toggleBrain(true)"><img src="https://img.icons8.com/ios-filled/35/ffffff/brain.png"></div>
+    <div id="closet-panel" class="glass-panel clickable">
+        <h3 style="margin:0 0 15px 0">CLOSET</h3>
+        <button class="closet-item" onclick="addClothing('Vintage Asian Dress Belt.gltf')">Asian Dress</button>
+        <button class="closet-item" style="background: #ff4d4d;" onclick="removeClothing()">Remove Outfit</button>
     </div>
 
-    <div id="personality-overlay">
-        <div class="personality-card">
-            <h2 style="margin-top:0">ASPIRATION</h2>
-            <select id="aspiration" style="width:100%; padding:10px;">
-                <option>Wealth</option>
-                <option>Knowledge</option>
-                <option>Creativity</option>
-                <option>Love</option>
-            </select>
-            <h2>TRAITS (MAX 3)</h2>
-            <div class="trait-grid">
-                <div class="trait-item" onclick="selectTrait(this, 'Ambitious')">Ambitious</div>
-                <div class="trait-item" onclick="selectTrait(this, 'Cheerful')">Cheerful</div>
-                <div class="trait-item" onclick="selectTrait(this, 'Genius')">Genius</div>
-                <div class="trait-item" onclick="selectTrait(this, 'Gloomy')">Gloomy</div>
-                <div class="trait-item" onclick="selectTrait(this, 'Mean')">Mean</div>
-                <div class="trait-item" onclick="selectTrait(this, 'Romantic')">Romantic</div>
-            </div>
-            <button class="clickable" style="float:right; padding:10px 20px; background:var(--ts-green); color:white; border:none; border-radius:5px;" onclick="toggleBrain(false)">DONE</button>
-        </div>
+    <div id="category-nav">
+        <div class="nav-circle clickable" onclick="togglePanel('skin-panel')"><img src="https://img.icons8.com/ios-filled/35/ffffff/user-male-circle.png"></div>
+        <div class="nav-circle clickable" onclick="togglePanel('closet-panel')"><img src="https://img.icons8.com/ios-filled/35/ffffff/t-shirt.png"></div>
     </div>
 
     <button class="play-btn clickable" onclick="saveSim()">PLAY</button>
@@ -214,11 +161,17 @@
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.target.set(0, 0.8, 0);
-    controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
 
-    let currentModel;
+    let currentModel, currentClothing;
     const loader = new GLTFLoader();
 
+    // UI Helper
+    window.togglePanel = (id) => {
+        const p = document.getElementById(id);
+        p.style.display = p.style.display === 'block' ? 'none' : 'block';
+    };
+
+    // Load Base Character
     window.loadModel = function(modelName) {
         if (currentModel) scene.remove(currentModel);
         loader.load('./models/' + modelName, (gltf) => {
@@ -227,6 +180,25 @@
             scene.add(currentModel);
         });
     }
+
+    // Load Clothing on top of character
+    window.addClothing = function(fileName) {
+        if (currentClothing) scene.remove(currentClothing);
+        loader.load('./models/' + fileName, (gltf) => {
+            currentClothing = gltf.scene;
+            
+            // FIX: Match the dress to the Sim's exact spot
+            currentClothing.position.copy(currentModel.position);
+            currentClothing.rotation.copy(currentModel.rotation);
+            
+            // Scaling Fix: Many clothing items are huge. If it's too big, change .set(0.1, 0.1, 0.1)
+            currentClothing.scale.set(1, 1, 1); 
+
+            scene.add(currentClothing);
+        });
+    }
+
+    window.removeClothing = () => { if(currentClothing) scene.remove(currentClothing); currentClothing = null; };
 
     document.getElementById('skinColorPicker').oninput = (e) => {
         if (!currentModel) return;
@@ -241,41 +213,12 @@
         renderer.render(scene, camera);
     }
     animate();
-</script>
 
-<script>
-    // Personality Logic
-    let selectedTraits = [];
-    window.toggleBrain = (show) => {
-        document.getElementById('personality-overlay').style.display = show ? 'flex' : 'none';
+    window.onresize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
     };
-
-    window.selectTrait = (el, trait) => {
-        if (selectedTraits.includes(trait)) {
-            selectedTraits = selectedTraits.filter(t => t !== trait);
-            el.classList.remove('selected');
-        } else if (selectedTraits.length < 3) {
-            selectedTraits.push(trait);
-            el.classList.add('selected');
-        }
-    };
-
-    const _supabase = supabase.createClient('https://sjomitglpwjyttsaxjat.supabase.co', 'sb_publishable_GC2hg2u7yvF5N2oRUr2VnA_VxxN3Iz1');
-
-    async function saveSim() {
-        const name = document.getElementById('simName').value;
-        if(!name || selectedTraits.length === 0) return alert("Complete your Sim first!");
-        
-        const { data: { user } } = await _supabase.auth.getUser();
-        await _supabase.from('sims').insert([{ 
-            owner_id: user.id, 
-            name: name,
-            aspiration: document.getElementById('aspiration').value,
-            traits: selectedTraits,
-            skin_color: document.getElementById('skinColorPicker').value
-        }]);
-        window.location.href = "map.html";
-    }
 </script>
 </body>
 </html>
