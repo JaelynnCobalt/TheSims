@@ -21,15 +21,16 @@
             height: 100vh;
         }
 
-        #master-ui {
+        /* THE FIX: This layer is invisible to the mouse, but its children are clickable */
+        #ui-wrapper {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            z-index: 10;
-            pointer-events: none;
+            z-index: 100;
+            pointer-events: none; 
         }
 
-        .clickable { pointer-events: auto; }
+        .clickable { pointer-events: auto !important; }
 
         /* Left Identity Panel */
         #identity-panel {
@@ -54,7 +55,7 @@
             color: white; font-size: 28px; padding: 5px; outline: none; width: 320px;
         }
 
-        /* Panels (Skin & Closet) */
+        /* Glass Panels */
         .glass-panel {
             position: absolute;
             background: var(--glass);
@@ -63,17 +64,19 @@
             border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.2);
             display: none;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         }
 
-        #skin-panel { top: 150px; left: 30px; width: 120px; text-align: center; display: block; }
-        #closet-panel { top: 30px; right: 110px; width: 200px; }
-
-        #skinColorPicker { width: 80px; height: 80px; border: none; background: none; cursor: pointer; }
+        #skin-panel { top: 150px; left: 30px; width: 120px; text-align: center; }
+        #closet-panel { top: 30px; right: 110px; width: 220px; }
+        #traits-panel { top: 30px; right: 110px; width: 220px; }
 
         .closet-item {
-            width: 100%; background: rgba(0,0,0,0.2); border: 1px solid white;
-            color: white; padding: 10px; margin-bottom: 8px; border-radius: 10px; cursor: pointer;
+            width: 100%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.5);
+            color: white; padding: 12px; margin-bottom: 8px; border-radius: 10px; cursor: pointer;
+            transition: 0.2s;
         }
+        .closet-item:hover { background: rgba(255,255,255,0.3); }
 
         /* Right Nav Icons */
         #category-nav {
@@ -89,8 +92,9 @@
             border: 1px solid rgba(255,255,255,0.4);
             border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
-            cursor: pointer;
+            cursor: pointer; transition: 0.2s;
         }
+        .nav-circle:hover { transform: scale(1.1); background: rgba(255,255,255,0.3); }
 
         .play-btn {
             position: absolute;
@@ -99,6 +103,7 @@
             background: var(--ts-green);
             border: 6px solid white; border-radius: 50%;
             color: white; font-weight: 900; font-size: 22px; cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
         }
 
         canvas { position: absolute; top: 0; left: 0; z-index: 1; outline: none; }
@@ -106,26 +111,35 @@
 </head>
 <body>
 
-<div id="master-ui">
+<div id="ui-wrapper">
     <div id="identity-panel" class="clickable">
         <div class="plumbob"></div>
         <input type="text" id="simName" placeholder="ENTER NAME...">
     </div>
 
-    <div id="skin-panel" class="glass-panel clickable">
+    <div id="skin-panel" class="glass-panel clickable" style="display: block;">
         <label style="font-size: 11px; font-weight: bold;">SKIN TONE</label><br><br>
-        <input type="color" id="skinColorPicker" value="#e6b291">
+        <input type="color" id="skinColorPicker" class="clickable" value="#e6b291" style="width:80px; height:80px; border:none; background:none; cursor:pointer;">
     </div>
 
     <div id="closet-panel" class="glass-panel clickable">
-        <h3 style="margin:0 0 15px 0">CLOSET</h3>
-        <button class="closet-item" onclick="addClothing('Vintage Asian Dress Belt.gltf')">Asian Dress</button>
-        <button class="closet-item" style="background: #ff4d4d;" onclick="removeClothing()">Remove Outfit</button>
+        <h3 style="margin:0 0 15px 0">OUTFITS</h3>
+        <button class="closet-item clickable" onclick="addClothing('Vintage Asian Dress Belt.gltf')">Vintage Asian Dress</button>
+        <button class="closet-item clickable" style="background: #ff4d4d;" onclick="removeClothing()">Remove Outfit</button>
+    </div>
+
+    <div id="traits-panel" class="glass-panel clickable">
+        <h3 style="margin:0 0 15px 0">TRAITS</h3>
+        <button class="closet-item clickable" onclick="setTrait('Ambitious')">Ambitious</button>
+        <button class="closet-item clickable" onclick="setTrait('Genius')">Genius</button>
+        <button class="closet-item clickable" onclick="setTrait('Romantic')">Romantic</button>
+        <p id="active-trait" style="font-size: 12px; color: #7fff00;"></p>
     </div>
 
     <div id="category-nav">
-        <div class="nav-circle clickable" onclick="togglePanel('skin-panel')"><img src="https://img.icons8.com/ios-filled/35/ffffff/user-male-circle.png"></div>
-        <div class="nav-circle clickable" onclick="togglePanel('closet-panel')"><img src="https://img.icons8.com/ios-filled/35/ffffff/t-shirt.png"></div>
+        <div class="nav-circle clickable" onclick="openPanel('skin-panel')"><img src="https://img.icons8.com/ios-filled/30/ffffff/user-male-circle.png"></div>
+        <div class="nav-circle clickable" onclick="openPanel('closet-panel')"><img src="https://img.icons8.com/ios-filled/30/ffffff/t-shirt.png"></div>
+        <div class="nav-circle clickable" onclick="openPanel('traits-panel')"><img src="https://img.icons8.com/ios-filled/30/ffffff/brain.png"></div>
     </div>
 
     <button class="play-btn clickable" onclick="saveSim()">PLAY</button>
@@ -165,45 +179,40 @@
     let currentModel, currentClothing;
     const loader = new GLTFLoader();
 
-    // UI Helper
-    window.togglePanel = (id) => {
-        const p = document.getElementById(id);
-        p.style.display = p.style.display === 'block' ? 'none' : 'block';
+    // UI Panel Logic
+    window.openPanel = (id) => {
+        document.querySelectorAll('.glass-panel').forEach(p => p.style.display = 'none');
+        document.getElementById(id).style.display = 'block';
     };
 
-    // Load Base Character
-    window.loadModel = function(modelName) {
+    // Load Sim
+    window.loadModel = (name) => {
         if (currentModel) scene.remove(currentModel);
-        loader.load('./models/' + modelName, (gltf) => {
+        loader.load('./models/' + name, (gltf) => {
             currentModel = gltf.scene;
             currentModel.position.y = -0.5;
             scene.add(currentModel);
         });
-    }
+    };
 
-    // Load Clothing on top of character
-    window.addClothing = function(fileName) {
+    // Load Dress
+    window.addClothing = (file) => {
         if (currentClothing) scene.remove(currentClothing);
-        loader.load('./models/' + fileName, (gltf) => {
+        loader.load('./models/' + file, (gltf) => {
             currentClothing = gltf.scene;
-            
-            // FIX: Match the dress to the Sim's exact spot
             currentClothing.position.copy(currentModel.position);
             currentClothing.rotation.copy(currentModel.rotation);
-            
-            // Scaling Fix: Many clothing items are huge. If it's too big, change .set(0.1, 0.1, 0.1)
+            // If the dress is too big, change these 1s to 0.1s
             currentClothing.scale.set(1, 1, 1); 
-
             scene.add(currentClothing);
         });
-    }
+    };
 
     window.removeClothing = () => { if(currentClothing) scene.remove(currentClothing); currentClothing = null; };
 
     document.getElementById('skinColorPicker').oninput = (e) => {
-        if (!currentModel) return;
-        currentModel.traverse((node) => { if (node.isMesh) node.material.color.set(e.target.value); });
-    }
+        if (currentModel) currentModel.traverse(n => { if(n.isMesh) n.material.color.set(e.target.value); });
+    };
 
     loadModel('Superhero_Male_FullBody.gltf');
 
@@ -213,12 +222,31 @@
         renderer.render(scene, camera);
     }
     animate();
+</script>
 
-    window.onresize = () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    };
+<script>
+    // Database & Traits
+    let selectedTrait = "";
+    function setTrait(t) {
+        selectedTrait = t;
+        document.getElementById('active-trait').innerText = "Selected: " + t;
+    }
+
+    const _supabase = supabase.createClient('https://sjomitglpwjyttsaxjat.supabase.co', 'sb_publishable_GC2hg2u7yvF5N2oRUr2VnA_VxxN3Iz1');
+
+    async function saveSim() {
+        const name = document.getElementById('simName').value;
+        if(!name) return alert("Enter a name!");
+        
+        const { data: { user } } = await _supabase.auth.getUser();
+        await _supabase.from('sims').insert([{ 
+            owner_id: user.id, 
+            name: name,
+            traits: [selectedTrait],
+            skin_color: document.getElementById('skinColorPicker').value
+        }]);
+        window.location.href = "map.html";
+    }
 </script>
 </body>
 </html>
