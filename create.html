@@ -2,153 +2,136 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create A Sim | High Fidelity</title>
+    <title>CAS | Create A Sim</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --ts-blue-light: #5ba8f5;
-            --ts-blue-dark: #1b4e8d;
-            --ts-green: #7fff00;
+            --ts-blue: radial-gradient(circle, #5ba8f5 0%, #1b4e8d 100%);
+            --glass: rgba(255, 255, 255, 0.15);
+            --blur: blur(15px);
         }
 
         body { 
             margin: 0; 
-            background: radial-gradient(circle, var(--ts-blue-light) 0%, var(--ts-blue-dark) 100%); 
-            font-family: "Segoe UI", Roboto, sans-serif;
+            background: var(--ts-blue); 
+            font-family: "Segoe UI", sans-serif;
             overflow: hidden;
             color: white;
         }
 
-        /* Top Left: Name & Plumbob */
-        #identity-section {
+        /* Identity Panel - Top Left */
+        #identity {
             position: absolute;
             top: 40px;
             left: 40px;
-            z-index: 10;
-            display: flex;
-            align-items: center;
+            z-index: 100;
         }
 
         .plumbob {
-            width: 50px;
-            height: 50px;
-            background: var(--ts-green);
+            width: 40px;
+            height: 40px;
+            background: #7fff00;
             clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-            margin-right: 20px;
-            filter: drop-shadow(0 0 15px rgba(127, 255, 0, 0.6));
+            display: inline-block;
+            vertical-align: middle;
+            filter: drop-shadow(0 0 10px #7fff00);
+            margin-right: 15px;
         }
 
         #simName {
             background: none;
             border: none;
-            border-bottom: 2px solid rgba(255,255,255,0.7);
+            border-bottom: 2px solid white;
             color: white;
-            font-size: 28px;
+            font-size: 24px;
             outline: none;
-            width: 300px;
+            width: 250px;
             text-transform: uppercase;
-            letter-spacing: 2px;
         }
 
-        /* Right Side: Circular Categories */
-        #category-nav {
+        /* Right Side Navigation */
+        #nav-panel {
             position: absolute;
             top: 40px;
             right: 40px;
             display: flex;
             flex-direction: column;
             gap: 20px;
-            z-index: 10;
+            z-index: 100;
         }
 
-        .nav-circle {
-            width: 70px;
-            height: 70px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        .icon-btn {
+            width: 65px;
+            height: 65px;
+            background: var(--glass);
+            backdrop-filter: var(--blur);
+            border: 1px solid rgba(255,255,255,0.3);
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            font-size: 32px;
-            transition: all 0.2s ease;
+            transition: 0.2s;
+            font-size: 24px;
         }
 
-        .nav-circle:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: scale(1.1);
-        }
+        .icon-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.1); }
 
-        /* Gender Toggle */
-        .gender-select {
-            margin-top: 15px;
-            display: flex;
-            gap: 10px;
-        }
-
-        .gender-btn {
-            background: rgba(0,0,0,0.2);
+        /* Gender Toggle Buttons */
+        .gender-toggle { margin-top: 20px; display: flex; gap: 10px; }
+        .g-btn {
+            background: rgba(0,0,0,0.3);
             border: 1px solid white;
             color: white;
-            padding: 8px 18px;
+            padding: 8px 15px;
             border-radius: 20px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
         }
 
-        /* Bottom Right: Iconic Play Button */
-        #play-action {
+        /* The Big Green Play Button */
+        .play-btn {
             position: absolute;
             bottom: 50px;
             right: 50px;
-            z-index: 10;
-        }
-
-        .play-btn {
-            width: 120px;
-            height: 120px;
+            width: 110px;
+            height: 110px;
             background: #4ecc70;
-            border: 6px solid white;
+            border: 5px solid white;
             border-radius: 50%;
             color: white;
             font-weight: 900;
             font-size: 20px;
             cursor: pointer;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            z-index: 100;
+            transition: 0.3s;
         }
 
-        .play-btn:hover { transform: scale(1.15); }
+        .play-btn:hover { transform: scale(1.1); }
 
         canvas { position: absolute; top: 0; left: 0; outline: none; }
     </style>
 </head>
 <body>
 
-<div id="identity-section">
+<div id="identity">
     <div class="plumbob"></div>
-    <div>
-        <input type="text" id="simName" placeholder="ENTER NAME...">
-        <div class="gender-select">
-            <button class="gender-btn" id="btnMale">♂ MALE</button>
-            <button class="gender-btn" id="btnFemale">♀ FEMALE</button>
-        </div>
+    <input type="text" id="simName" placeholder="ENTER NAME...">
+    <div class="gender-toggle">
+        <button class="g-btn" onclick="window.loadModel('Superhero_Male_FullBody.gltf')">♂ MALE</button>
+        <button class="g-btn" onclick="window.loadModel('Superhero_Female_FullBody.gltf')">♀ FEMALE</button>
     </div>
 </div>
 
-<div id="category-nav">
-    <div class="nav-circle" title="Body">👤</div>
-    <div class="nav-circle" title="Hair">💇</div>
-    <div class="nav-circle" title="Clothing">👕</div>
-    <div class="nav-circle" title="Traits">🧠</div>
+<div id="nav-panel">
+    <div class="icon-btn">👤</div>
+    <div class="icon-btn">💇</div>
+    <div class="icon-btn">👕</div>
+    <div class="icon-btn">🧠</div>
 </div>
 
-<div id="play-action">
-    <button class="play-btn" onclick="saveSim()">PLAY</button>
-</div>
+<button class="play-btn" onclick="saveSim()">PLAY</button>
 
 <script type="importmap">
 {
@@ -163,57 +146,46 @@
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-    // 1. Setup Scene
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     document.body.appendChild(renderer.domElement);
 
-    // 2. High-Quality "Studio" Lighting
-    const ambient = new THREE.AmbientLight(0xffffff, 1.0);
-    scene.add(ambient);
+    // Studio Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(5, 5, 5);
+    scene.add(light);
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    keyLight.position.set(2, 4, 5);
-    scene.add(keyLight);
-
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    fillLight.position.set(-2, 2, 2);
-    scene.add(fillLight);
-
-    camera.position.set(0, 1.4, 4.5);
+    camera.position.set(0, 1.2, 4); // Centered on the character's chest
 
     let currentModel;
     const loader = new GLTFLoader();
 
-    window.loadModel = function(modelName) {
+    window.loadModel = function(name) {
         if (currentModel) scene.remove(currentModel);
-
-        loader.load('./models/' + modelName, (gltf) => {
+        
+        loader.load('./models/' + name, (gltf) => {
             currentModel = gltf.scene;
             
-            // Auto-center and Scale logic
+            // FIX POSITION: This keeps his feet on the ground and centers him
             const box = new THREE.Box3().setFromObject(currentModel);
             const center = box.getCenter(new THREE.Vector3());
-            currentModel.position.sub(center); 
-            currentModel.position.y = -0.9; // Position feet near bottom
-
+            currentModel.position.x = -center.x;
+            currentModel.position.z = -center.z;
+            currentModel.position.y = -1.5; // Adjusted to move him "up" into view
+            
             scene.add(currentModel);
-        }, undefined, (err) => console.error("Error loading model:", err));
+        });
     }
 
-    // Assign buttons
-    document.getElementById('btnMale').onclick = () => loadModel('Superhero_Male_FullBody.gltf');
-    document.getElementById('btnFemale').onclick = () => loadModel('Superhero_Female_FullBody.gltf');
-
-    // Default load
     loadModel('Superhero_Male_FullBody.gltf');
 
     function animate() {
         requestAnimationFrame(animate);
-        if(currentModel) currentModel.rotation.y += 0.004;
+        if(currentModel) currentModel.rotation.y += 0.005;
         renderer.render(scene, camera);
     }
     animate();
@@ -226,18 +198,14 @@
 </script>
 
 <script>
-    // Supabase logic (Non-module)
     const SUPABASE_URL = 'https://sjomitglpwjyttsaxjat.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_GC2hg2u7yvF5N2oRUr2VnA_VxxN3Iz1';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     async function saveSim() {
         const name = document.getElementById('simName').value;
-        if(!name) return alert("Give your Sim a name!");
-        
+        if(!name) return alert("Name your Sim!");
         const { data: { user } } = await _supabase.auth.getUser();
-        if(!user) return alert("Please Login!");
-
         await _supabase.from('sims').insert([{ owner_id: user.id, name: name }]);
         window.location.href = "map.html";
     }
