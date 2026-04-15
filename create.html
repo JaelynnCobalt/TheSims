@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Create A Sim | Fixed Scale & UI</title>
+    <title>Create A Sim | Final Fix</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -21,51 +21,53 @@
             height: 100vh;
         }
 
-        /* UI LAYER FIX: Z-index 1000 and pointer-events: none */
+        /* UI LAYER - Always on top, mouse-clicks pass through empty space */
         #ui-layer {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            z-index: 1000;
+            z-index: 9999;
             pointer-events: none; 
         }
 
-        /* Makes buttons clickable again */
         .clickable { pointer-events: auto !important; cursor: pointer; }
 
+        /* Panels */
         #identity-panel { position: absolute; top: 30px; left: 30px; display: flex; align-items: center; }
         .plumbob { width: 40px; height: 40px; background: #7fff00; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); margin-right: 15px; }
 
         #simName {
-            background: rgba(0,0,0,0.2); border: none; border-bottom: 2px solid white;
-            color: white; font-size: 24px; padding: 5px; outline: none; width: 250px;
+            background: rgba(0,0,0,0.3); border: none; border-bottom: 2px solid white;
+            color: white; font-size: 24px; padding: 10px; outline: none; width: 300px;
         }
 
         .glass-panel {
-            position: absolute; background: var(--glass); backdrop-filter: blur(15px);
-            padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.3);
-            display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: absolute; background: var(--glass); backdrop-filter: blur(20px);
+            padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.4);
+            display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         }
 
-        #skin-panel { top: 120px; left: 30px; display: block; }
-        #closet-panel { top: 30px; right: 100px; width: 220px; }
+        #skin-panel { top: 140px; left: 30px; width: 150px; text-align: center; display: block; }
+        #closet-panel { top: 30px; right: 110px; width: 240px; }
 
         .item-btn {
             width: 100%; background: white; color: #333; border: none;
             padding: 12px; margin-bottom: 10px; border-radius: 8px; font-weight: bold;
         }
 
-        #category-nav { position: absolute; top: 30px; right: 30px; display: flex; flex-direction: column; gap: 10px; }
-        .nav-btn { width: 55px; height: 55px; background: var(--glass); border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 1px solid white; }
-
-        .play-btn {
-            position: absolute; bottom: 30px; right: 30px;
-            width: 100px; height: 100px; background: var(--ts-green);
-            border: 4px solid white; border-radius: 50%; color: white; font-weight: 900;
+        .gender-btn {
+            padding: 8px 15px; background: rgba(255,255,255,0.2); border: 1px solid white;
+            color: white; margin-top: 10px; border-radius: 5px;
         }
 
-        /* 3D Canvas sits BEHIND the UI */
-        canvas { position: absolute; top: 0; left: 0; z-index: 1; outline: none; }
+        /* Nav */
+        #category-nav { position: absolute; top: 30px; right: 30px; display: flex; flex-direction: column; gap: 15px; }
+        .nav-btn { 
+            width: 60px; height: 60px; background: var(--glass); border-radius: 50%; 
+            display: flex; justify-content: center; align-items: center; border: 1px solid white; 
+        }
+
+        canvas { position: absolute; top: 0; left: 0; z-index: 1; }
     </style>
 </head>
 <body>
@@ -73,26 +75,30 @@
 <div id="ui-layer">
     <div id="identity-panel" class="clickable">
         <div class="plumbob"></div>
-        <input type="text" id="simName" placeholder="NAME...">
+        <div>
+            <input type="text" id="simName" placeholder="ENTER NAME...">
+            <div style="display: flex; gap: 5px;">
+                <button class="gender-btn clickable" onclick="loadModel('Superhero_Male_FullBody.gltf')">♂ MALE</button>
+                <button class="gender-btn clickable" onclick="loadModel('Superhero_Female_FullBody.gltf')">♀ FEMALE</button>
+            </div>
+        </div>
     </div>
 
     <div id="skin-panel" class="glass-panel clickable">
-        <p style="margin:0 0 10px 0; font-size: 12px;">SKIN TONE</p>
-        <input type="color" id="skinColorPicker" class="clickable" value="#e6b291" style="width:60px; height:60px; border:none; cursor:pointer;">
+        <p style="margin:0 0 10px 0; font-weight: bold;">SKIN TONE</p>
+        <input type="color" id="skinColorPicker" class="clickable" value="#e6b291" style="width:100%; height:60px; border:none; cursor:pointer;">
     </div>
 
     <div id="closet-panel" class="glass-panel clickable">
-        <p style="margin:0 0 10px 0; font-weight:bold;">OUTFITS</p>
-        <button class="item-btn clickable" onclick="addClothing('Vintage Asian Dress Belt.gltf')">Asian Dress</button>
-        <button class="item-btn clickable" style="background:#ff4d4d; color:white;" onclick="removeClothing()">Remove</button>
+        <h3 style="margin-top:0;">CLOSET</h3>
+        <button class="item-btn clickable" onclick="addClothing('Vintage Asian Dress Belt.gltf')">Vintage Asian Dress</button>
+        <button class="item-btn clickable" style="background:#ff4d4d; color:white;" onclick="removeClothing()">Remove Outfit</button>
     </div>
 
     <div id="category-nav">
-        <div class="nav-btn clickable" onclick="showPanel('skin-panel')">👤</div>
-        <div class="nav-btn clickable" onclick="showPanel('closet-panel')">👕</div>
+        <div class="nav-btn clickable" onclick="togglePanel('skin-panel')">👤</div>
+        <div class="nav-btn clickable" onclick="togglePanel('closet-panel')">👕</div>
     </div>
-
-    <button class="play-btn clickable" onclick="saveSim()">PLAY</button>
 </div>
 
 <script type="importmap">
@@ -110,51 +116,67 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
     scene.add(new THREE.AmbientLight(0xffffff, 1.5));
-    camera.position.set(0, 1, 4);
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(5, 10, 7.5);
+    scene.add(light);
 
+    camera.position.set(0, 1.2, 5);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 0.8, 0);
 
     let currentModel, currentClothing;
     const loader = new GLTFLoader();
 
-    window.showPanel = (id) => {
-        document.querySelectorAll('.glass-panel').forEach(p => p.style.display = 'none');
-        document.getElementById(id).style.display = 'block';
-    }
+    window.togglePanel = (id) => {
+        const p = document.getElementById(id);
+        const isVisible = p.style.display === 'block';
+        document.querySelectorAll('.glass-panel').forEach(el => el.style.display = 'none');
+        p.style.display = isVisible ? 'none' : 'block';
+    };
 
-    // Load character
-    loader.load('./models/Superhero_Male_FullBody.gltf', (gltf) => {
-        currentModel = gltf.scene;
-        currentModel.position.y = -0.5;
-        scene.add(currentModel);
-    });
+    window.loadModel = (name) => {
+        if (currentModel) scene.remove(currentModel);
+        if (currentClothing) scene.remove(currentClothing); // Remove dress if switching genders
+        loader.load('./models/' + name, (gltf) => {
+            currentModel = gltf.scene;
+            currentModel.position.y = -0.5;
+            scene.add(currentModel);
+        });
+    };
 
-    // CLOTHING FIX: Added massive scale reduction (0.01)
     window.addClothing = (file) => {
         if (currentClothing) scene.remove(currentClothing);
         loader.load('./models/' + file, (gltf) => {
             currentClothing = gltf.scene;
-            currentClothing.position.copy(currentModel.position);
             
-            // This forces the dress to shrink to a normal size
-            currentClothing.scale.set(0.01, 0.01, 0.01); 
+            // CENTER & SCALE FIX
+            // Box3 helps us find the center of the dress model if its origin is broken
+            const box = new THREE.Box3().setFromObject(currentClothing);
+            const center = box.getCenter(new THREE.Vector3());
+            currentClothing.position.x += (currentModel.position.x - center.x);
+            currentClothing.position.y += (currentModel.position.y - center.y) + 0.8; // Adjust height
+            currentClothing.position.z += (currentModel.position.z - center.z);
+            
+            // This is likely the scale you need (0.01 = 100x smaller)
+            currentClothing.scale.set(0.015, 0.015, 0.015); 
             
             scene.add(currentClothing);
         });
-    }
+    };
 
-    window.removeClothing = () => { if(currentClothing) scene.remove(currentClothing); };
+    window.removeClothing = () => { if(currentClothing) scene.remove(currentClothing); currentClothing = null; };
 
     document.getElementById('skinColorPicker').oninput = (e) => {
         if (currentModel) currentModel.traverse(n => { if(n.isMesh) n.material.color.set(e.target.value); });
-    }
+    };
+
+    loadModel('Superhero_Male_FullBody.gltf');
 
     function animate() {
         requestAnimationFrame(animate);
