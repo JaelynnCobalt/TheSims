@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create A Sim | High Fidelity</title>
+    <title>Create A Sim | The Sims 4 Style</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -14,36 +13,36 @@
 
         body { 
             margin: 0; 
-            background: radial-gradient(circle, var(--ts-blue-light) 0%, var(--ts-blue-dark) 100%); 
+            /* High-Fidelity radial gradient like the screenshot */
+            background: radial-gradient(circle at center, var(--ts-blue-light) 0%, var(--ts-blue-dark) 100%); 
             font-family: "Segoe UI", sans-serif;
-            overflow: hidden;
+            overflow: hidden; /* Standard for CAS to keep it looking like a game */
             color: white;
+            height: 100vh;
         }
 
-        /* CRITICAL FIX: Ensure UI is above the 3D canvas */
-        #ui-layer {
+        /* THE FIX: This layer sits on top but lets clicks "fall through" to the 3D world if no button is hit */
+        #ui-master-layer {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 100; /* High number so it's on top */
-            pointer-events: none; /* Allows clicks to pass through empty space */
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 999;
+            pointer-events: none; 
         }
 
-        .interactive { pointer-events: auto; } /* Re-enables clicking for buttons/inputs */
+        /* This class makes specific UI elements clickable again */
+        .clickable { pointer-events: auto; }
 
-        #identity-section {
+        /* Identity Panel (Top Left) */
+        #identity-panel {
             position: absolute;
-            top: 40px;
-            left: 40px;
+            top: 40px; left: 40px;
             display: flex;
             align-items: center;
         }
 
         .plumbob {
-            width: 40px;
-            height: 40px;
+            width: 45px; height: 45px;
             background: #7fff00;
             clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
             margin-right: 20px;
@@ -51,56 +50,65 @@
         }
 
         #simName {
-            background: none;
+            background: rgba(255,255,255,0.1);
             border: none;
             border-bottom: 2px solid white;
             color: white;
             font-size: 24px;
+            padding: 5px 10px;
             outline: none;
-            width: 250px;
+            width: 300px;
             text-transform: uppercase;
         }
 
+        /* Skin Tone Color Box (Modern UI) */
+        #skin-tone-container {
+            position: absolute;
+            top: 140px; left: 40px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .skin-box {
+            width: 40px; height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.2s;
+        }
+        .skin-box:hover { transform: scale(1.1); border-color: white; }
+
+        /* Category Nav (Right Side) */
         #category-nav {
             position: absolute;
-            top: 40px;
-            right: 40px;
+            top: 40px; right: 40px;
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
 
         .nav-circle {
-            width: 60px; height: 60px;
-            background: rgba(255, 255, 255, 0.15);
+            width: 65px; height: 65px;
+            background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255,255,255,0.3);
             border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
-            cursor: pointer; font-size: 24px;
-        }
-
-        /* Skin Tone Adjuster */
-        #skin-panel {
-            position: absolute;
-            left: 40px;
-            top: 150px;
-            background: rgba(0,0,0,0.3);
-            padding: 20px;
-            border-radius: 15px;
-            backdrop-filter: blur(5px);
+            cursor: pointer; font-size: 28px;
         }
 
         .play-btn {
             position: absolute;
-            bottom: 40px;
-            right: 40px;
-            width: 110px; height: 110px;
+            bottom: 40px; right: 40px;
+            width: 120px; height: 120px;
             background: var(--ts-green);
-            border: 5px solid white;
+            border: 6px solid white;
             border-radius: 50%;
-            color: white; font-weight: bold;
-            cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            color: white; font-weight: 900; font-size: 20px;
+            cursor: pointer; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         }
 
         canvas { position: absolute; top: 0; left: 0; z-index: 1; }
@@ -108,31 +116,38 @@
 </head>
 <body>
 
-<div id="ui-layer">
-    <div id="identity-section" class="interactive">
+<div id="ui-master-layer">
+    <div id="identity-panel" class="clickable">
         <div class="plumbob"></div>
         <div>
             <input type="text" id="simName" placeholder="ENTER NAME...">
-            <div style="margin-top:10px;">
-                <button class="interactive" onclick="window.loadModel('Superhero_Male_FullBody.gltf')">MALE</button>
-                <button class="interactive" onclick="window.loadModel('Superhero_Female_FullBody.gltf')">FEMALE</button>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="clickable" onclick="loadModel('Superhero_Male_FullBody.gltf')">♂ MALE</button>
+                <button class="clickable" onclick="loadModel('Superhero_Female_FullBody.gltf')">♀ FEMALE</button>
             </div>
         </div>
     </div>
 
-    <div id="skin-panel" class="interactive">
-        <label>SKIN TONE</label><br>
-        <input type="range" id="skinSlider" min="0" max="100" value="50" style="width:150px;">
+    <div id="skin-tone-container" class="clickable">
+        <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 10px;">SKIN TONE</label>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+            <div class="skin-box" style="background: #f3c8ad;" onclick="changeSkin('#f3c8ad')"></div>
+            <div class="skin-box" style="background: #e6b291;" onclick="changeSkin('#e6b291')"></div>
+            <div class="skin-box" style="background: #ac7e5c;" onclick="changeSkin('#ac7e5c')"></div>
+            <div class="skin-box" style="background: #8d5531;" onclick="changeSkin('#8d5531')"></div>
+            <div class="skin-box" style="background: #4b2c20;" onclick="changeSkin('#4b2c20')"></div>
+            <div class="skin-box" style="background: #2b1608;" onclick="changeSkin('#2b1608')"></div>
+        </div>
     </div>
 
     <div id="category-nav">
-        <div class="nav-circle interactive">👤</div>
-        <div class="nav-circle interactive">💇</div>
-        <div class="nav-circle interactive">👕</div>
-        <div class="nav-circle interactive">🧠</div>
+        <div class="nav-circle clickable" title="Body">👤</div>
+        <div class="nav-circle clickable" title="Hair">💇</div>
+        <div class="nav-circle clickable" title="Clothing">👕</div>
+        <div class="nav-circle clickable" title="Traits">🧠</div>
     </div>
 
-    <button class="play-btn interactive" onclick="saveSim()">PLAY</button>
+    <button class="play-btn clickable" onclick="saveSim()">PLAY</button>
 </div>
 
 <script type="importmap">
@@ -149,44 +164,41 @@
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
     document.body.appendChild(renderer.domElement);
 
-    const ambient = new THREE.AmbientLight(0xffffff, 1.2);
-    scene.add(ambient);
+    // Studio Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
     const light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(5, 5, 5);
     scene.add(light);
 
-    camera.position.set(0, 1.2, 4);
+    camera.position.set(0, 1.2, 4.5);
 
     let currentModel;
     const loader = new GLTFLoader();
 
-    window.loadModel = function(name) {
+    window.loadModel = function(modelName) {
         if (currentModel) scene.remove(currentModel);
-        loader.load('./models/' + name, (gltf) => {
+        // Assuming your models are in a folder named 'models'
+        loader.load('./models/' + modelName, (gltf) => {
             currentModel = gltf.scene;
             currentModel.position.y = -1;
             scene.add(currentModel);
         });
     }
 
-    // Skin Tone Logic
-    document.getElementById('skinSlider').addEventListener('input', (e) => {
+    window.changeSkin = function(hexColor) {
         if (!currentModel) return;
-        const val = e.target.value / 100;
-        // Simple color math: moves from dark brown to light peach
-        const r = 0.3 + (val * 0.6);
-        const g = 0.2 + (val * 0.5);
-        const b = 0.1 + (val * 0.4);
-        
         currentModel.traverse((node) => {
-            if (node.isMesh) node.material.color.setRGB(r, g, b);
+            if (node.isMesh) {
+                node.material.color.set(hexColor);
+            }
         });
-    });
+    }
 
     loadModel('Superhero_Male_FullBody.gltf');
 
@@ -196,6 +208,30 @@
         renderer.render(scene, camera);
     }
     animate();
+
+    window.onresize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+</script>
+
+<script>
+    // Database Logic
+    const SUPABASE_URL = 'https://sjomitglpwjyttsaxjat.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_GC2hg2u7yvF5N2oRUr2VnA_VxxN3Iz1';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function saveSim() {
+        const name = document.getElementById('simName').value;
+        if(!name) return alert("Please name your Sim!");
+        
+        const { data: { user } } = await _supabase.auth.getUser();
+        if(!user) return alert("You must be logged in!");
+
+        await _supabase.from('sims').insert([{ owner_id: user.id, name: name }]);
+        window.location.href = "map.html";
+    }
 </script>
 </body>
 </html>
