@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CAS Replica</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, #5aa9d6, #6fd1a8);
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* HEADER */
+.header {
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    color: white;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+/* LAYOUT */
+.container {
+    display: flex;
+    height: 100%;
+}
+
+/* LEFT PANEL (SLIDERS) */
+.left-panel {
+    width: 20%;
+    padding: 20px;
+    color: white;
+}
+
+.slider-box {
+    margin-bottom: 25px;
+}
+
+.slider-box label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+input[type="range"] {
+    width: 100%;
+}
+
+/* CENTER CHARACTER */
+.center {
+    width: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+/* CHARACTER */
+.character {
+    position: relative;
+    width: 260px;
+    height: 500px;
+    transition: transform 0.2s;
+}
+
+.base {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: url('https://i.imgur.com/8Qf6p6F.png') center/contain no-repeat;
+}
+
+.layer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+/* RADIAL MENU */
+.radial {
+    position: absolute;
+    right: -120px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.hex {
+    width: 55px;
+    height: 55px;
+    background: rgba(255,255,255,0.2);
+    margin: 8px;
+    clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+}
+
+.hex:hover {
+    background: rgba(255,255,255,0.4);
+}
+
+/* RIGHT PANEL */
+.right-panel {
+    width: 30%;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    padding: 10px;
+    overflow-y: auto;
+}
+
+.category {
+    color: white;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.item {
+    background: white;
+    border-radius: 10px;
+    height: 100px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.item img {
+    max-width: 80%;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="header">Hello, My Name Is...</div>
+
+<div class="container">
+
+    <!-- SLIDERS -->
+    <div class="left-panel">
+
+        <div class="slider-box">
+            <label>Height</label>
+            <input type="range" min="80" max="120" value="100" id="heightSlider">
+        </div>
+
+        <div class="slider-box">
+            <label>Weight</label>
+            <input type="range" min="80" max="130" value="100" id="weightSlider">
+        </div>
+
+        <div class="slider-box">
+            <label>Muscle</label>
+            <input type="range" min="80" max="130" value="100" id="muscleSlider">
+        </div>
+
+    </div>
+
+    <!-- CHARACTER -->
+    <div class="center">
+
+        <div class="character" id="character">
+            <div class="base"></div>
+            <div id="topLayer" class="layer"></div>
+            <div id="bottomLayer" class="layer"></div>
+        </div>
+
+        <!-- RADIAL MENU -->
+        <div class="radial">
+            <div class="hex" onclick="setCategory('tops')">👕</div>
+            <div class="hex" onclick="setCategory('bottoms')">👖</div>
+            <div class="hex" onclick="setCategory('full')">👗</div>
+        </div>
+
+    </div>
+
+    <!-- CLOTHING -->
+    <div class="right-panel">
+        <div class="category" id="categoryTitle">Tops</div>
+        <div class="grid" id="grid"></div>
+    </div>
+
+</div>
+
+<script>
+
+const items = {
+    tops: [
+        "https://i.imgur.com/Q9bK0xT.png",
+        "https://i.imgur.com/2WZtODC.png"
+    ],
+    bottoms: [
+        "https://i.imgur.com/6r9KZ8P.png",
+        "https://i.imgur.com/k3KpJ6C.png"
+    ],
+    full: [
+        "https://i.imgur.com/yhZ9G3G.png"
+    ]
+};
+
+let currentCategory = "tops";
+
+/* CATEGORY SWITCH */
+function setCategory(cat) {
+    currentCategory = cat;
+    document.getElementById("categoryTitle").innerText =
+        cat.charAt(0).toUpperCase() + cat.slice(1);
+    renderItems();
+}
+
+/* RENDER GRID */
+function renderItems() {
+    const grid = document.getElementById("grid");
+    grid.innerHTML = "";
+
+    items[currentCategory].forEach(src => {
+        const div = document.createElement("div");
+        div.className = "item";
+
+        const img = document.createElement("img");
+        img.src = src;
+
+        div.appendChild(img);
+        div.onclick = () => applyItem(src);
+
+        grid.appendChild(div);
+    });
+}
+
+/* APPLY CLOTHING */
+function applyItem(src) {
+    if (currentCategory === "tops") {
+        topLayer.style.backgroundImage = `url(${src})`;
+    } else if (currentCategory === "bottoms") {
+        bottomLayer.style.backgroundImage = `url(${src})`;
+    } else {
+        topLayer.style.backgroundImage = `url(${src})`;
+        bottomLayer.style.backgroundImage = "";
+    }
+}
+
+/* SLIDERS */
+const character = document.getElementById("character");
+
+function updateBody() {
+    const height = document.getElementById("heightSlider").value / 100;
+    const weight = document.getElementById("weightSlider").value / 100;
+    const muscle = document.getElementById("muscleSlider").value / 100;
+
+    character.style.transform =
+        `scaleY(${height}) scaleX(${weight})`;
+
+    character.style.filter =
+        `contrast(${muscle})`;
+}
+
+document.querySelectorAll("input").forEach(slider => {
+    slider.addEventListener("input", updateBody);
+});
+
+/* INIT */
+renderItems();
+
+</script>
+
+</body>
+</html>
